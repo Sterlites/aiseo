@@ -1,3 +1,11 @@
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  const globalHook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
+  if (globalHook) {
+    for (let [key, value] of Object.entries(globalHook)) {
+      globalHook[key] = typeof value == 'function' ? () => {} : null;
+    }
+  }
+}
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Globe, ArrowRight, Loader2 } from "lucide-react";
@@ -14,6 +22,8 @@ export default function App() {
   const handleAnalyze = async (url: string) => {
     setIsLoading(true);
     setError(null);
+    setSEOReport(null);
+    
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -21,15 +31,16 @@ export default function App() {
         body: JSON.stringify({ url }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
       
-      const data = await response.json();
       setSEOReport(data);
     } catch (err) {
-      setError(`${err instanceof Error ? err.message : 'An unknown error occurred'}`);
+      console.error('Error analyzing URL:', err);
+      setError(`Failed to analyze URL: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);
     }
@@ -94,10 +105,10 @@ export default function App() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <form onSubmit={(e) => {
+         <form onSubmit={(e) => {
             e.preventDefault();
-            const urlInput = e.currentTarget.querySelector('input');
-            if (urlInput) handleAnalyze(urlInput.value);
+            const urlInput = e.currentTarget.querySelector('input') as HTMLInputElement;
+            if (urlInput && urlInput.value) handleAnalyze(urlInput.value);
           }} className="relative max-w-4xl mx-auto mb-12">
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />

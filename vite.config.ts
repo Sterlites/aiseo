@@ -4,11 +4,30 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Exclude React DevTools in production
+      babel: {
+        plugins: process.env.NODE_ENV === 'production' 
+          ? ['babel-plugin-dev-expression']
+          : [],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+        },
+      },
+    },
+    sourcemap: false, // Disable sourcemaps in production
   },
   server: {
     proxy: {

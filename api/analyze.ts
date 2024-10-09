@@ -3,30 +3,36 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 function normalizeUrl(url: string): string {
-  // Remove leading/trailing whitespace
-  url = url.trim();
-  
-  // Add protocol if missing
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'https://' + url;
-  }
-  
   try {
+    // Remove leading/trailing whitespace
+    url = url.trim();
+    
+    // Add protocol if missing
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    
     const urlObject = new URL(url);
     return urlObject.href;
   } catch (error) {
-    throw new Error('Invalid URL');
+    throw new Error(`Invalid URL: ${url}`);
   }
 }
 
 async function analyzeSEO(url: string) {
   try {
-    const response = await axios.get(url);
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 10000 // 10 second timeout
+    });
+    
     const html = response.data;
     const $ = cheerio.load(html);
 
     const title = $('title').text();
-    const metaDescription = $('meta[name="description"]').attr('content');
+    const metaDescription = $('meta[name="description"]').attr('content') || '';
     const h1Count = $('h1').length;
     const imgCount = $('img').length;
     const imgWithAlt = $('img[alt]').length;
@@ -40,85 +46,87 @@ async function analyzeSEO(url: string) {
       recommendations
     };
   } catch (error) {
-    if (error.response) {
-      throw new Error(`Failed to fetch URL: ${error.response.status} ${error.response.statusText}`);
-    } else if (error.request) {
-      throw new Error('No response received from the server');
-    } else {
-      throw new Error(`Error analyzing URL: ${error.message}`);
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        throw new Error(`Failed to fetch URL: ${error.response.status} ${error.response.statusText}`);
+      } else if (error.request) {
+        throw new Error('No response received from the server');
+      } else {
+        throw new Error(`Error setting up the request: ${error.message}`);
+      }
     }
+    throw new Error(`Error analyzing URL: ${error.message}`);
   }
 }
 
-
 function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt) {
-    let score = 100;
-const penalties: string[] = [];
-    const bonuses: string[] = [];
-  
-    // Title analysis
-    if (!title) {
-      score -= 15;
-      penalties.push('Missing title tag');
-    } else {
-      const titleLength = title.length;
-      if (titleLength < 30) {
-        score -= 10;
-        penalties.push('Title too short (< 30 characters)');
-      } else if (titleLength > 60) {
-        score -= 5;
-        penalties.push('Title too long (> 60 characters)');
-      } else {
-        bonuses.push('Optimal title length');
-      }
-    }
-  
-    // Meta description analysis
-    if (!metaDescription) {
+  let score = 100;
+  const penalties: string[] = [];
+  const bonuses: string[] = [];
+
+  // Title analysis
+  if (!title) {
+    score -= 15;
+    penalties.push('Missing title tag');
+  } else {
+    const titleLength = title.length;
+    if (titleLength < 30) {
       score -= 10;
-      penalties.push('Missing meta description');
-    } else {
-      const descLength = metaDescription.length;
-      if (descLength < 120) {
-        score -= 8;
-        penalties.push('Meta description too short (< 120 characters)');
-      } else if (descLength > 160) {
-        score -= 3;
-        penalties.push('Meta description too long (> 160 characters)');
-      } else {
-        bonuses.push('Optimal meta description length');
-      }
-    }
-  
-    // H1 analysis
-    if (h1Count === 0) {
-      score -= 10;
-      penalties.push('Missing H1 tag');
-    } else if (h1Count > 1) {
+      penalties.push('Title too short (< 30 characters)');
+    } else if (titleLength > 60) {
       score -= 5;
-      penalties.push('Multiple H1 tags');
+      penalties.push('Title too long (> 60 characters)');
     } else {
-      bonuses.push('Proper H1 tag usage');
+      bonuses.push('Optimal title length');
     }
-  
-    // Image analysis
-    if (imgCount > 0) {
-      const altTextPercentage = (imgWithAlt / imgCount) * 100;
-      if (altTextPercentage < 100) {
-        const penalty = Math.round((100 - altTextPercentage) / 10);
-        score -= penalty;
-        penalties.push(`${Math.round(100 - altTextPercentage)}% of images missing alt text`);
-      } else {
-        bonuses.push('All images have alt text');
-      }
-    }
-  
-    return {
-      score: Math.max(0, Math.min(100, score)),
-      penalties,
-      bonuses
-    };
   }
+
+  // Meta description analysis
+  if (!metaDescription) {
+    score -= 10;
+    penalties.push('Missing meta description');
+  } else {
+    const descLength = metaDescription.length;
+    if (descLength < 120) {
+      score -= 8;
+      penalties.push('Meta description too short (< 120 characters)');
+    } else if (descLength > 160) {
+      score -= 3;
+      penalties.push('Meta description too long (> 160 characters)');
+    } else {
+      bonuses.push('Optimal meta description length');
+    }
+  }
+
+  // H1 analysis
+  if (h1Count === 0) {
+    score -= 10;
+    penalties.push('Missing H1 tag');
+  } else if (h1Count > 1) {
+    score -= 5;
+    penalties.push('Multiple H1 tags');
+  } else {
+    bonuses.push('Proper H1 tag usage');
+  }
+
+  // Image analysis
+  if (imgCount > 0) {
+    const altTextPercentage = (imgWithAlt / imgCount) * 100;
+    if (altTextPercentage < 100) {
+      const penalty = Math.round((100 - altTextPercentage) / 10);
+      score -= penalty;
+      penalties.push(`${Math.round(100 - altTextPercentage)}% of images missing alt text`);
+    } else {
+      bonuses.push('All images have alt text');
+    }
+  }
+
+  return {
+    score: Math.max(0, Math.min(100, score)),
+    penalties,
+    bonuses
+  };
+}
   interface Recommendation {
     id: string;
     category: string;
@@ -248,28 +256,39 @@ const penalties: string[] = [];
 
 
 
-export default async function handler(
+  export default async function handler(
     req: VercelRequest,
     res: VercelResponse
   ) {
+    console.log('Received request:', req.method, req.body); // Log incoming request
+  
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
     }
   
     try {
-      let { url } = req.body;
+      const { url } = req.body;
       
       if (!url) {
+        console.log('No URL provided');
         return res.status(400).json({ error: 'URL is required' });
       }
   
+      console.log('Processing URL:', url);
       const normalizedUrl = normalizeUrl(url);
+      console.log('Normalized URL:', normalizedUrl);
+      
       const seoReport = await analyzeSEO(normalizedUrl);
+      console.log('Analysis complete:', seoReport);
       
       return res.status(200).json(seoReport);
     } catch (error) {
+      console.error('Error in handler:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      return res.status(500).json({ error: errorMessage });
+      return res.status(500).json({ 
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
+      });
     }
   }
   

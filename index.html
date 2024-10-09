@@ -4,23 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI SEO Analyzer</title>
-    
-    <!-- Inter font -->
-    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    
-    <!-- Vite and React refresh scripts -->
-    <script type="module">
-      import RefreshRuntime from "/@react-refresh"
-      RefreshRuntime.injectIntoGlobalHook(window)
-      window.$RefreshReg$ = () => {}
-      window.$RefreshSig$ = () => (type) => type
-      window.__vite_plugin_react_preamble_installed__ = true
-    </script>
-    <script type="module" src="/@vite/client"></script>
+    <title>SEO Analyzer</title>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Prevent React DevTools error in production
+      if (typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'object') {
+        __REACT_DEVTOOLS_GLOBAL_HOOK__.inject = function() {};
+      }
+    </script>
   </body>
 </html>
