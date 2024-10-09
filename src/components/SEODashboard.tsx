@@ -22,16 +22,16 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
         transition={{ duration: 0.2 }}
       >
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
-        <div className="relative bg-gray-900 rounded-2xl overflow-hidden">
+        <div className="relative rounded-2xl overflow-hidden bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
           <div className="p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold mb-2">SEO Analysis Results</h2>
+                <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">SEO Analysis Results</h2>
                 <a 
                   href={report.url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center text-gray-400 hover:text-white transition-colors"
+                  className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                 >
                   {report.url} <ExternalLink size={16} className="ml-1" />
                 </a>
@@ -45,11 +45,11 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
                 <div className="text-6xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
                   {report.overallScore.score}
                 </div>
-                <div className="text-gray-400">SEO Score</div>
+                <div className="text-gray-600 dark:text-gray-400">SEO Score</div>
               </motion.div>
             </div>
             
-            <div className="relative h-4 bg-gray-800 rounded-full overflow-hidden">
+            <div className="relative h-4 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden transition-colors duration-200">
               <motion.div 
                 className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-purple-500"
                 initial={{ width: 0 }}
@@ -79,7 +79,7 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
 
       {/* Recommendations */}
       <div className="space-y-6">
-        <h3 className="text-2xl font-bold">Detailed Recommendations</h3>
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Detailed Recommendations</h3>
         {report.recommendations.map((rec: Recommendation, index) => (
           <RecommendationCard key={rec.id} recommendation={rec} index={index} />
         ))}
@@ -102,8 +102,8 @@ const AnimatedCard: React.FC<{
     whileHover={{ scale: 1.02 }}
   >
     <div className={`absolute -inset-1 bg-gradient-to-r ${colorClass} rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300`} />
-    <div className="relative bg-gray-900 rounded-2xl p-6">
-      <h3 className="flex items-center text-lg font-semibold mb-4">
+    <div className="relative rounded-2xl p-6 bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
+      <h3 className="flex items-center text-lg font-semibold mb-4 text-gray-900 dark:text-white">
         {icon}
         <span className="ml-2">{title}</span>
       </h3>
@@ -116,8 +116,8 @@ const AnimatedCard: React.FC<{
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <ArrowUpRight className="mr-2 mt-1 text-gray-400" size={16} />
-            <span className="text-gray-300">{item}</span>
+            <ArrowUpRight className="mr-2 mt-1 text-gray-500 dark:text-gray-400" size={16} />
+            <span className="text-gray-700 dark:text-gray-300">{item}</span>
           </motion.li>
         ))}
       </ul>
@@ -137,9 +137,9 @@ const RecommendationCard: React.FC<{
     whileHover={{ scale: 1.02 }}
   >
     <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
-    <div className="relative bg-gray-900 rounded-2xl p-6">
+    <div className="relative rounded-2xl p-6 bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
       <div className="flex items-start justify-between mb-4">
-        <h4 className="text-lg font-semibold">{recommendation.title}</h4>
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">{recommendation.title}</h4>
         <span className={`
           px-3 py-1 rounded-full text-sm font-medium
           ${recommendation.impact === 'High' ? 'bg-red-500/20 text-red-400' :
@@ -149,14 +149,15 @@ const RecommendationCard: React.FC<{
           {recommendation.impact} Impact
         </span>
       </div>
-      <span className="inline-block px-3 py-1 bg-gray-800 rounded-full text-sm text-gray-400 mb-4">
+      <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">
         {recommendation.category}
       </span>
-      <p className="text-gray-300 mb-4">{recommendation.description}</p>
-      <div className="bg-gray-800/50 rounded-xl p-4">
-        <h5 className="font-semibold mb-2">Implementation Steps</h5>
+      <p className="text-gray-700 dark:text-gray-300 mb-4">{recommendation.description}</p>
+      <div className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 transition-colors duration-200">
+        <h5 className="font-semibold mb-2 text-gray-900 dark:text-white">Implementation Steps</h5>
         <ul className="space-y-2">
-          {recommendation.steps.map((step, stepIndex) => (<motion.li
+          {recommendation.steps.map((step, stepIndex) => (
+            <motion.li
               key={stepIndex}
               className="flex items-start"
               initial={{ opacity: 0, x: -20 }}
@@ -164,7 +165,7 @@ const RecommendationCard: React.FC<{
               transition={{ delay: stepIndex * 0.1 }}
             >
               <ChevronRight className="mr-2 mt-1 text-blue-400" size={16} />
-              <span className="text-gray-400">{step}</span>
+              <span className="text-gray-600 dark:text-gray-400">{step}</span>
             </motion.li>
           ))}
         </ul>

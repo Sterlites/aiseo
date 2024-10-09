@@ -20,13 +20,8 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let inputUrl = e.target.value;
-    
-    // Remove any whitespace
     inputUrl = inputUrl.trim();
-    
-    // Remove protocol if user types it
     inputUrl = inputUrl.replace(/^(https?:\/\/)/, '');
-    
     setUrl(inputUrl);
   };
 
@@ -46,17 +41,20 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
             }}
             className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"
           />
-          <div className="relative bg-gray-900 rounded-2xl p-2">
+          <div className="relative rounded-2xl p-2 bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
             <div className="flex items-center">
               <motion.div
                 animate={{ rotate: isLoading ? 360 : 0 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="ml-4 mr-2"
               >
-                <Globe className="text-gray-400" size={20} />
+                <Globe className="text-gray-500 dark:text-gray-400" size={20} />
               </motion.div>
               <input
-                className="w-full px-4 py-4 text-lg bg-transparent outline-none text-white placeholder-gray-400 transition-all duration-300"
+                className="w-full px-4 py-4 text-lg bg-transparent outline-none 
+                          text-gray-900 dark:text-white 
+                          placeholder-gray-500 dark:placeholder-gray-400 
+                          transition-colors duration-200"
                 type="text"
                 placeholder="Enter website URL (e.g., example.com)"
                 value={url}
@@ -76,8 +74,8 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
                   font-medium rounded-xl
                   transition-all duration-300
                   ${isLoading 
-                    ? 'bg-gray-700 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90'
+                    ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
+                    : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 text-white'
                   }
                 `}
                 type="submit"
@@ -104,6 +102,18 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
             </div>
           </div>
         </div>
+
+        {/* Optional validation message with theme support */}
+        {url && !url.match(/^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$/) && (
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mt-2 text-sm text-amber-600 dark:text-amber-400 transition-colors duration-200"
+          >
+            Please enter a valid domain (e.g., example.com)
+          </motion.p>
+        )}
       </form>
     </motion.div>
   );
