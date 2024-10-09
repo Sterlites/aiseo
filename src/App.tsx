@@ -15,17 +15,21 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:3000/api/analyze", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setSEOReport(data);
     } catch (err) {
-      setError(`An error occurred: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`${err instanceof Error ? err.message : 'An unknown error occurred'}`);
     } finally {
       setIsLoading(false);
     }
@@ -102,8 +106,10 @@ export default function App() {
                   <Globe className="ml-4 mr-2 text-gray-400" />
                   <input
                     className="w-full px-4 py-4 bg-transparent text-lg outline-none text-white placeholder-gray-400"
-                    type="url"
-                    placeholder="Enter any website URL..."
+                    type="text"
+                    placeholder="Enter website URL (e.g., example.com)"
+                    pattern="^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$"
+                    title="Please enter a valid domain (e.g., example.com)"
                     required
                   />
                   <button
@@ -133,33 +139,32 @@ export default function App() {
         </motion.div>
 
         <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-4xl mx-auto mb-8 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="w-full max-w-4xl mx-auto mb-8 bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <AnimatePresence>
-          {seoReport && (
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -40 }}
-              transition={{ duration: 0.5 }}
-            >
-              <SEODashboard report={seoReport} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <AnimatePresence>
+            {seoReport && (
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -40 }}
+                transition={{ duration: 0.5 }}
+              >
+                <SEODashboard report={seoReport} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
     </ThemeProvider>
-
   );
 }

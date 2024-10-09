@@ -1,9 +1,26 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
-export async function analyzeSEO(url) {
+function normalizeUrl(url: string): string {
+  // Remove leading/trailing whitespace
+  url = url.trim();
+  
+  // Add protocol if missing
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+  
   try {
-    console.log('Fetching URL:', url);
+    const urlObject = new URL(url);
+    return urlObject.href;
+  } catch (error) {
+    throw new Error('Invalid URL');
+  }
+}
+
+async function analyzeSEO(url: string) {
+  try {
     const response = await axios.get(url);
     const html = response.data;
     const $ = cheerio.load(html);
@@ -14,12 +31,8 @@ export async function analyzeSEO(url) {
     const imgCount = $('img').length;
     const imgWithAlt = $('img[alt]').length;
 
-    console.log('Extracted data:', { title, metaDescription, h1Count, imgCount, imgWithAlt });
-
     const seoScore = calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt);
     const recommendations = generateRecommendations(title, metaDescription, h1Count, imgCount, imgWithAlt);
-
-    console.log('Analysis complete:', { seoScore, recommendationsCount: recommendations.length });
 
     return {
       url,
@@ -27,21 +40,21 @@ export async function analyzeSEO(url) {
       recommendations
     };
   } catch (error) {
-    console.error('Error in analyzeSEO:', error);
     if (error.response) {
       throw new Error(`Failed to fetch URL: ${error.response.status} ${error.response.statusText}`);
     } else if (error.request) {
       throw new Error('No response received from the server');
     } else {
-      throw new Error(`Error setting up the request: ${error.message}`);
+      throw new Error(`Error analyzing URL: ${error.message}`);
     }
   }
 }
 
+
 function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt) {
     let score = 100;
-    const penalties = [];
-    const bonuses = [];
+const penalties: string[] = [];
+    const bonuses: string[] = [];
   
     // Title analysis
     if (!title) {
@@ -106,9 +119,16 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
       bonuses
     };
   }
-  
+  interface Recommendation {
+    id: string;
+    category: string;
+    impact: string;
+    title: string;
+    description: string;
+    steps: string[];
+  }
   function generateRecommendations(title, metaDescription, h1Count, imgCount, imgWithAlt) {
-    const recommendations = [];
+    const recommendations: Recommendation[] = [];
   
     // Title recommendations
     if (!title) {
@@ -221,6 +241,36 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
     }
   
     return recommendations;
+  }
+
+
+
+
+
+
+export default async function handler(
+    req: VercelRequest,
+    res: VercelResponse
+  ) {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+  
+    try {
+      let { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: 'URL is required' });
+      }
+  
+      const normalizedUrl = normalizeUrl(url);
+      const seoReport = await analyzeSEO(normalizedUrl);
+      
+      return res.status(200).json(seoReport);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      return res.status(500).json({ error: errorMessage });
+    }
   }
   
   export { calculateSEOScore, generateRecommendations };

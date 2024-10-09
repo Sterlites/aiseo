@@ -18,6 +18,18 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
     }
   };
 
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let inputUrl = e.target.value;
+    
+    // Remove any whitespace
+    inputUrl = inputUrl.trim();
+    
+    // Remove protocol if user types it
+    inputUrl = inputUrl.replace(/^(https?:\/\/)/, '');
+    
+    setUrl(inputUrl);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -45,13 +57,15 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
               </motion.div>
               <input
                 className="w-full px-4 py-4 text-lg bg-transparent outline-none text-white placeholder-gray-400 transition-all duration-300"
-                type="url"
-                placeholder="Enter any website URL..."
+                type="text"
+                placeholder="Enter website URL (e.g., example.com)"
                 value={url}
-                onChange={(e) => setUrl(e.target.value)}
+                onChange={handleUrlChange}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 required
+                pattern="^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$"
+                title="Please enter a valid domain (e.g., example.com)"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
