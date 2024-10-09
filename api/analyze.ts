@@ -4,10 +4,8 @@ import * as cheerio from 'cheerio';
 
 function normalizeUrl(url: string): string {
   try {
-    // Remove leading/trailing whitespace
     url = url.trim();
     
-    // Add protocol if missing
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
     }
@@ -25,7 +23,7 @@ async function analyzeSEO(url: string) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       },
-      timeout: 60000 // 10 second timeout
+      timeout: 10000
     });
     
     const html = response.data;
@@ -55,11 +53,12 @@ async function analyzeSEO(url: string) {
         throw new Error(`Error setting up the request: ${error.message}`);
       }
     }
-    throw new Error(`Error analyzing URL: ${error.message}`);
+    throw new Error(`Error analyzing URL: ${(error as Error).message}`);
   }
 }
 
-function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt) {
+
+function calculateSEOScore(title: string | any[], metaDescription: string | any[], h1Count: number, imgCount: number, imgWithAlt: number) {
   let score = 100;
   const penalties: string[] = [];
   const bonuses: string[] = [];
@@ -135,7 +134,7 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
     description: string;
     steps: string[];
   }
-  function generateRecommendations(title, metaDescription, h1Count, imgCount, imgWithAlt) {
+  function generateRecommendations(title: string | any[], metaDescription: string | any[], h1Count: number, imgCount: number, imgWithAlt: number) {
     const recommendations: Recommendation[] = [];
   
     // Title recommendations
@@ -280,7 +279,6 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
     } catch (error) {
       console.error('Error in handler:', error);
       
-      // Ensure we're always returning a JSON response
       res.setHeader('Content-Type', 'application/json');
       
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -290,4 +288,6 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
       });
     }
   }
+  
+  // If you need to export these functions for testing or other purposes:
   export { calculateSEOScore, generateRecommendations };
