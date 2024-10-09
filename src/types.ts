@@ -7,7 +7,7 @@ export interface SEOScore {
 export interface Recommendation {
   id: string;
   category: string;
-  impact: 'High' | 'Medium' | 'Low';
+  impact: string;
   title: string;
   description: string;
   steps: string[];
