@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from "./App.tsx";
 import "./index.css";
 
-const basePath = import.meta.env.BASE_PATH || '/';
+const basePath = (import.meta as any).env.BASE_PATH || '/';
 // console.log('Debug: Determined basePath =', basePath);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
