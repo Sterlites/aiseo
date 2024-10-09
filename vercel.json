@@ -11,7 +11,7 @@
       }
     ],
     "functions": {
-        "api/analyze.ts": {
+        "api/seoanalyze.ts": {
           "maxDuration": 60
         }
       }
