@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Globe } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Search, Globe, Loader2 } from 'lucide-react';
 
 interface URLInputProps {
   onAnalyze: (url: string) => void;
@@ -18,64 +19,79 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
   };
 
   return (
-    <div className="w-full max-w-4xl mb-12">
-      <form onSubmit={handleSubmit} className="relative">
-        <div 
-          className={`
-            relative overflow-hidden rounded-2xl 
-            transition-all duration-300 ease-out
-            ${isFocused ? 'shadow-lg scale-105' : 'shadow'}
-          `}
-        >
-          {/* Background animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient" />
-          
-          {/* Input container */}
-          <div className="relative bg-white m-[2px] rounded-2xl p-2">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="w-full max-w-4xl mx-auto mb-12"
+    >
+      <form onSubmit={handleSubmit}>
+        <div className="relative group">
+          <motion.div
+            animate={{
+              opacity: isFocused ? 1 : 0.7,
+              scale: isFocused ? 1.02 : 1,
+            }}
+            className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"
+          />
+          <div className="relative bg-gray-900 rounded-2xl p-2">
             <div className="flex items-center">
-              <Globe className="ml-4 mr-2 text-gray-400" size={20} />
+              <motion.div
+                animate={{ rotate: isLoading ? 360 : 0 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="ml-4 mr-2"
+              >
+                <Globe className="text-gray-400" size={20} />
+              </motion.div>
               <input
-                className="w-full px-4 py-4 text-lg bg-transparent outline-none text-gray-700 placeholder-gray-400"
+                className="w-full px-4 py-4 text-lg bg-transparent outline-none text-white placeholder-gray-400 transition-all duration-300"
                 type="url"
                 placeholder="Enter any website URL..."
-                aria-label="Website URL"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 required
               />
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 className={`
                   flex items-center justify-center
-                  min-w-[120px] h-12 px-6 mr-2
+                  min-w-[140px] h-12 px-6 mr-2
                   font-medium rounded-xl
                   transition-all duration-300
                   ${isLoading 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:opacity-90'
+                    ? 'bg-gray-700 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90'
                   }
                 `}
                 type="submit"
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-400" />
-                    <span className="ml-2">Analyzing</span>
-                  </div>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Loader2 className="w-5 h-5" />
+                  </motion.div>
                 ) : (
-                  <div className="flex items-center">
+                  <motion.div
+                    initial={false}
+                    animate={{ x: isFocused ? 5 : 0 }}
+                    className="flex items-center"
+                  >
                     <Search size={18} />
                     <span className="ml-2">Analyze</span>
-                  </div>
+                  </motion.div>
                 )}
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 };
 
