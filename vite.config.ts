@@ -17,36 +17,37 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-  plugins: [react()],
-  base: getBasePath(),
+    plugins: [react()],
+    base: getBasePath(),
 
-  resolve: {
-    alias: {
-      '@': path.resolve(fileURLToPath(import.meta.url), './src'),
+    resolve: {
+      alias: {
+        '@': path.resolve(fileURLToPath(import.meta.url), './src'),
+      },
     },
-  },
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react: ['react', 'react-dom'],
+    build: {
+      outDir: 'seo-assets', // Specify the output directory
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom'],
+          },
+        },
+      },
+      sourcemap: false, // Disable sourcemaps in production
+    },
+    server: {
+      cors: true,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
         },
       },
     },
-    sourcemap: false, // Disable sourcemaps in production
-  },
-  server: {
-    cors: true,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
-    },
-  },
-  define: {
-    'import.meta.env.BASE_PATH': JSON.stringify(getBasePath()),
-    'import.meta.env.VERCEL_URL': JSON.stringify(process.env.VERCEL_URL || '')
+    define: {
+      'import.meta.env.BASE_PATH': JSON.stringify(getBasePath()),
+      'import.meta.env.VERCEL_URL': JSON.stringify(process.env.VERCEL_URL || '')
+    }
   }
-}
 })
