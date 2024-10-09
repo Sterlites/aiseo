@@ -18,6 +18,8 @@ export default defineConfig(({ mode }) => {
 
   return {
   plugins: [react()],
+  base: getBasePath(),
+
   resolve: {
     alias: {
       '@': path.resolve(fileURLToPath(import.meta.url), './src'),
@@ -34,6 +36,7 @@ export default defineConfig(({ mode }) => {
     sourcemap: false, // Disable sourcemaps in production
   },
   server: {
+    cors: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
@@ -41,5 +44,9 @@ export default defineConfig(({ mode }) => {
       },
     },
   },
+  define: {
+    'import.meta.env.BASE_PATH': JSON.stringify(getBasePath()),
+    'import.meta.env.VERCEL_URL': JSON.stringify(process.env.VERCEL_URL || '')
+  }
 }
 })
