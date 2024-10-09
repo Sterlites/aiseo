@@ -1,11 +1,3 @@
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  const globalHook = (window as any).__REACT_DEVTOOLS_GLOBAL_HOOK__;
-  if (globalHook) {
-    for (let [key, value] of Object.entries(globalHook)) {
-      globalHook[key] = typeof value == 'function' ? () => {} : null;
-    }
-  }
-}
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Globe, ArrowRight, Loader2 } from "lucide-react";
@@ -31,7 +23,15 @@ export default function App() {
         body: JSON.stringify({ url }),
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        // If not JSON, get the text and show it as an error
+        const textResponse = await response.text();
+        throw new Error(textResponse || `Server returned ${response.status} ${response.statusText}`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);

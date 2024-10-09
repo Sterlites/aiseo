@@ -251,16 +251,11 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
     return recommendations;
   }
 
-
-
-
-
-
   export default async function handler(
     req: VercelRequest,
     res: VercelResponse
   ) {
-    console.log('Received request:', req.method, req.body); // Log incoming request
+    console.log('Received request:', req.method, req.body);
   
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method not allowed' });
@@ -284,6 +279,10 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
       return res.status(200).json(seoReport);
     } catch (error) {
       console.error('Error in handler:', error);
+      
+      // Ensure we're always returning a JSON response
+      res.setHeader('Content-Type', 'application/json');
+      
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       return res.status(500).json({ 
         error: errorMessage,
@@ -291,5 +290,4 @@ function calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt
       });
     }
   }
-  
   export { calculateSEOScore, generateRecommendations };
