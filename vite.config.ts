@@ -26,7 +26,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      outDir: 'seo-assets', // Specify the output directory
+      outDir: 'dist',
+      assetsDir: 'seo-assets', // Changed to match vercel.json configuration
       rollupOptions: {
         output: {
           manualChunks: {
@@ -34,7 +35,7 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      sourcemap: false, // Disable sourcemaps in production
+      sourcemap: false,
     },
     server: {
       cors: true,
