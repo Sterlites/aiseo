@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import chromium from '@sparticuz/chrome-aws-lambda';
+import type { Browser } from 'puppeteer-core';
+
 
 interface DetailedSEOScore {
   score: number;
@@ -289,22 +292,86 @@ function analyzeTechnicalSEO($: cheerio.CheerioAPI): DetailedSEOScore {
 }
 
 async function enhancedAnalyzeSEO(url: string): Promise<EnhancedSEOReport> {
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      },
-      timeout: 60000,
-      maxRedirects: 5,
-      validateStatus: function (status) {
-        return status >= 200 && status < 300; // Only treat 2xx as success
+  let html: string;
+  let fetchMethod = 'axios';
+  let browser: Browser | null = null;
+
+  async function attemptAxiosFetch() {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+        },
+        timeout: 15000,
+        maxRedirects: 5,
+      });
+      return response.data;
+    } catch (error) {
+      console.log(`Axios fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  async function attemptPuppeteerFetch() {
+    try {
+      // Configure chrome-aws-lambda
+      const executablePath = await chromium.executablePath;
+
+      if (!executablePath) {
+        throw new Error('Chrome executable path not found');
       }
-    });
-    
-    const html = response.data;
+
+      // Launch browser with Vercel-specific configuration
+      browser = await chromium.puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: executablePath,
+        headless: chromium.headless,
+      });
+
+      const page = await browser.newPage();
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+      
+      // Set a timeout for navigation
+      await page.setDefaultNavigationTimeout(10000);
+      
+      // Wait for network idle to ensure dynamic content is loaded
+      await page.goto(url, { waitUntil: 'networkidle0' });
+      
+      // Get the rendered HTML
+      const content = await page.content();
+      return content;
+    } catch (error) {
+      console.log(`Puppeteer fetch failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw error;
+    }
+  }
+
+  try {
+    // First attempt: Axios
+    try {
+      html = await attemptAxiosFetch();
+    } catch (axiosError) {
+      console.log('Axios attempt failed, trying Puppeteer...');
+      // Second attempt: Puppeteer
+      fetchMethod = 'puppeteer';
+      html = await attemptPuppeteerFetch();
+    }
+
     const $ = cheerio.load(html);
 
-    // Generate scores
+    // Add fetch method to the report
+    const baseReport = {
+      url,
+      fetchMethod,
+      htmlLength: html.length,
+    };
+
+    // Perform SEO analysis
     const titleScore = analyzeTitleTag($);
     const metaDescriptionScore = analyzeMetaDescription($);
     const headingsScore = analyzeHeadings($);
@@ -315,34 +382,113 @@ async function enhancedAnalyzeSEO(url: string): Promise<EnhancedSEOReport> {
     const scores = [titleScore, metaDescriptionScore, headingsScore, imageScore, contentScore, technicalScore];
     const overallScore = calculateOverallScore(scores);
 
-    const detailedScores = {
-      titleScore,
-      metaDescriptionScore,
-      headingsScore,
-      imageOptimizationScore: imageScore,
-      contentScore,
-      technicalScore
-    };
-
     return {
-      url,
+      ...baseReport,
       overallScore,
-      detailedScores,
-      recommendations: generateEnhancedRecommendations(detailedScores)
+      detailedScores: {
+        titleScore,
+        metaDescriptionScore,
+        headingsScore,
+        imageOptimizationScore: imageScore,
+        contentScore,
+        technicalScore
+      },
+      recommendations: generateEnhancedRecommendations({
+        titleScore,
+        metaDescriptionScore,
+        headingsScore,
+        imageOptimizationScore: imageScore,
+        contentScore,
+        technicalScore
+      })
     };
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.code === 'ECONNREFUSED') {
-        throw new Error(`Unable to connect to ${url}. The website might be down or blocking requests.`);
-      } else if (error.code === 'ENOTFOUND') {
-        throw new Error(`Domain ${url} not found. Please check if the URL is correct.`);
-      } else if (error.response) {
-        throw new Error(`Server responded with error: ${error.response.status} ${error.response.statusText}`);
-      } else if (error.request) {
-        throw new Error(`No response received from ${url}. The website might be down or taking too long to respond.`);
+    let errorMessage = 'Unknown error occurred while analyzing the website';
+    if (error instanceof Error) {
+      if (fetchMethod === 'axios' && axios.isAxiosError(error)) {
+        if (error.code === 'ECONNREFUSED') {
+          errorMessage = `Connection refused to ${url}. The website might be blocking automated requests.`;
+        } else if (error.code === 'ENOTFOUND') {
+          errorMessage = `Domain ${url} not found. Please check if the URL is correct.`;
+        } else if (error.response) {
+          errorMessage = `Server responded with error: ${error.response.status} ${error.response.statusText}`;
+        } else if (error.request) {
+          errorMessage = `No response received from ${url}. The website might be blocking automated requests.`;
+        }
+      } else if (fetchMethod === 'puppeteer') {
+        errorMessage = `Failed to analyze ${url} using browser simulation. The website might have strong anti-bot measures.`;
       }
     }
-    throw new Error(`Error analyzing URL: ${(error as Error).message}`);
+    throw new Error(errorMessage);
+  } finally {
+    if (browser) {
+      await (browser as Browser).close();
+    }
+  }
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  console.log('Received request:', req.method, req.body);
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      details: 'This endpoint only accepts POST requests'
+    });
+  }
+
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      console.log('No URL provided');
+      return res.status(400).json({ 
+        error: 'URL is required',
+        details: 'Please provide a valid URL in the request body'
+      });
+    }
+
+    console.log('Processing URL:', url);
+    const normalizedUrl = normalizeUrl(url);
+    console.log('Normalized URL:', normalizedUrl);
+    
+    const seoReport = await enhancedAnalyzeSEO(normalizedUrl);
+    console.log('Analysis complete');
+    
+    return res.status(200).json(seoReport);
+  } catch (error) {
+    console.error('Error in handler:', error);
+    
+    let statusCode = 500;
+    let errorMessage = 'An unknown error occurred';
+    let errorDetails = '';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorDetails = error.stack || '';
+      
+      // Determine appropriate status code based on error type
+      if (errorMessage.includes('Domain not found')) {
+        statusCode = 400;
+      } else if (errorMessage.includes('Connection refused') || 
+                 errorMessage.includes('No response received')) {
+        statusCode = 503;
+      }
+    }
+    
+    return res.status(statusCode).json({ 
+      error: errorMessage,
+      details: errorDetails,
+      suggestions: [
+        'Check if the URL is correct and accessible',
+        'Try analyzing the website later',
+        'Make sure the website is not blocking automated requests',
+        'If the issue persists, try analyzing a different URL'
+      ]
+    });
   }
 }
 function calculateOverallScore(scores: DetailedSEOScore[]): {
@@ -488,69 +634,6 @@ if (scores.technicalScore.score < 90) {
   return recommendations;
 }
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  console.log('Received request:', req.method, req.body);
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      error: 'Method not allowed',
-      details: 'This endpoint only accepts POST requests'
-    });
-  }
-
-  try {
-    const { url } = req.body;
-    
-    if (!url) {
-      console.log('No URL provided');
-      return res.status(400).json({ 
-        error: 'URL is required',
-        details: 'Please provide a valid URL in the request body'
-      });
-    }
-
-    console.log('Processing URL:', url);
-    const normalizedUrl = normalizeUrl(url);
-    console.log('Normalized URL:', normalizedUrl);
-    
-    const seoReport = await enhancedAnalyzeSEO(normalizedUrl);
-    console.log('Analysis complete');
-    
-    return res.status(200).json(seoReport);
-  } catch (error) {
-    console.error('Error in handler:', error);
-    
-    let statusCode = 500;
-    let errorMessage = 'An unknown error occurred';
-    let errorDetails = '';
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      errorDetails = error.stack || '';
-      
-      // Determine appropriate status code based on error type
-      if (errorMessage.includes('Domain not found')) {
-        statusCode = 400;
-      } else if (errorMessage.includes('Unable to connect') || 
-                 errorMessage.includes('No response received')) {
-        statusCode = 503;
-      }
-    }
-    
-    return res.status(statusCode).json({ 
-      error: errorMessage,
-      details: errorDetails,
-      suggestions: [
-        'Check if the URL is correct and accessible',
-        'Try analyzing the website later',
-        'Make sure the website is not blocking automated requests',
-        'If the issue persists, try analyzing a different URL'
-      ]
-    });
-  }
-}
 
 export { enhancedAnalyzeSEO, type EnhancedSEOReport };

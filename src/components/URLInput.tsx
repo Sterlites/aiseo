@@ -64,7 +64,7 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
                           placeholder-gray-500 dark:placeholder-gray-400 
                           transition-colors duration-200"
                 type="text"
-                placeholder="Enter website URL (e.g., example.com or https://home.seeddao.org)"
+                placeholder="Enter website URL (e.g., example.com or https://example.com)"
                 value={url}
                 onChange={handleUrlChange}
                 onFocus={() => setIsFocused(true)}
@@ -117,7 +117,7 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
             exit={{ opacity: 0, y: -10 }}
             className="mt-2 text-sm text-amber-600 dark:text-amber-400 transition-colors duration-200"
           >
-            Please enter a valid URL (e.g., example.com or https://home.seeddao.org)
+            Please enter a valid URL (e.g., example.com or https://example.com)
           </motion.p>
         )}
       </form>
