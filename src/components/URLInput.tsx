@@ -13,16 +13,24 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (url) {
-      onAnalyze(url);
+    if (url && isValidUrl(url)) {
+      // Ensure the URL has a protocol before passing it to onAnalyze
+      const urlWithProtocol = url.startsWith('http://') || url.startsWith('https://') 
+        ? url 
+        : `https://${url}`;
+      onAnalyze(urlWithProtocol);
     }
   };
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let inputUrl = e.target.value;
-    inputUrl = inputUrl.trim();
-    inputUrl = inputUrl.replace(/^(https?:\/\/)/, '');
+    let inputUrl = e.target.value.trim();
     setUrl(inputUrl);
+  };
+
+  const isValidUrl = (url: string) => {
+    // This regex allows URLs with or without protocol, www, subdomains, and paths
+    const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+(\.[a-zA-Z]{2,})?([\/\w \.-]*)*\/?$/;
+    return pattern.test(url);
   };
 
   return (
@@ -56,14 +64,12 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
                           placeholder-gray-500 dark:placeholder-gray-400 
                           transition-colors duration-200"
                 type="text"
-                placeholder="Enter website URL (e.g., example.com)"
+                placeholder="Enter website URL (e.g., example.com or https://home.seeddao.org)"
                 value={url}
                 onChange={handleUrlChange}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 required
-                pattern="^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$"
-                title="Please enter a valid domain (e.g., example.com)"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
@@ -73,13 +79,13 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
                   min-w-[140px] h-12 px-6 mr-2
                   font-medium rounded-xl
                   transition-all duration-300
-                  ${isLoading 
+                  ${isLoading || !isValidUrl(url)
                     ? 'bg-gray-200 dark:bg-gray-700 cursor-not-allowed text-gray-500 dark:text-gray-400'
                     : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 text-white'
                   }
                 `}
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !isValidUrl(url)}
               >
                 {isLoading ? (
                   <motion.div
@@ -104,14 +110,14 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
         </div>
 
         {/* Optional validation message with theme support */}
-        {url && !url.match(/^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$/) && (
+        {url && !isValidUrl(url) && (
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className="mt-2 text-sm text-amber-600 dark:text-amber-400 transition-colors duration-200"
           >
-            Please enter a valid domain (e.g., example.com)
+            Please enter a valid URL (e.g., example.com or https://home.seeddao.org)
           </motion.p>
         )}
       </form>

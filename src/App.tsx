@@ -119,7 +119,7 @@ export default function App() {
                     className="w-full px-4 py-4 bg-transparent text-lg outline-none text-white placeholder-gray-400"
                     type="text"
                     placeholder="Enter website URL (e.g., example.com)"
-                    pattern="^([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}$"
+                    pattern="^(https?:\/\/)?(www\.)?([a-zA-Z0-9]+(-[a-zA-Z0-9]+)*\.)+[a-zA-Z]{2,}(\/\S*)?$"
                     title="Please enter a valid domain (e.g., example.com)"
                     required
                   />

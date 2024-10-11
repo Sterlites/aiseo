@@ -2,14 +2,51 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+interface DetailedSEOScore {
+  score: number;
+  category: string;
+  details: {
+    value: string | number;
+    impact: 'positive' | 'negative' | 'neutral';
+    context?: string;
+  };
+}
+
+interface EnhancedSEOReport {
+  url: string;
+  overallScore: {
+    score: number;
+    interpretation: string;
+    penalties: string[];
+    bonuses: string[];
+  };
+  detailedScores: {
+    titleScore: DetailedSEOScore;
+    metaDescriptionScore: DetailedSEOScore;
+    headingsScore: DetailedSEOScore;
+    imageOptimizationScore: DetailedSEOScore;
+    contentScore: DetailedSEOScore;
+    technicalScore: DetailedSEOScore;
+  };
+  recommendations: Recommendation[];
+}
+
+interface Recommendation {
+  id: string;
+  category: string;
+  impact: 'High' | 'Medium' | 'Low';
+  title: string;
+  description: string;
+  steps: string[];
+  additionalContext?: string;
+}
+
 function normalizeUrl(url: string): string {
   try {
     url = url.trim();
-    
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
     }
-    
     const urlObject = new URL(url);
     return urlObject.href;
   } catch (error) {
@@ -17,277 +54,503 @@ function normalizeUrl(url: string): string {
   }
 }
 
-async function analyzeSEO(url: string) {
+function analyzeTitleTag($: cheerio.CheerioAPI): DetailedSEOScore {
+  const title = $('title').text().trim();
+  const titleLength = title.length;
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  let context = '';
+
+  if (!title) {
+    return {
+      score: 0,
+      category: 'Title Tag',
+      details: {
+        value: 'Missing',
+        impact: 'negative',
+        context: 'A title tag is crucial for SEO and user experience.'
+      }
+    };
+  }
+
+  if (titleLength < 30) {
+    score -= 30;
+    impact = 'negative';
+    context = 'Title is too short. Aim for 30-60 characters.';
+  } else if (titleLength > 60) {
+    score -= 15;
+    impact = 'negative';
+    context = 'Title may be truncated in search results.';
+  } else {
+    impact = 'positive';
+    context = 'Title length is optimal.';
+  }
+
+  return {
+    score,
+    category: 'Title Tag',
+    details: {
+      value: titleLength,
+      impact,
+      context
+    }
+  };
+}
+
+function analyzeMetaDescription($: cheerio.CheerioAPI): DetailedSEOScore {
+  const metaDescription = $('meta[name="description"]').attr('content')?.trim() || '';
+  const descLength = metaDescription.length;
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  let context = '';
+
+  if (!metaDescription) {
+    return {
+      score: 0,
+      category: 'Meta Description',
+      details: {
+        value: 'Missing',
+        impact: 'negative',
+        context: 'A meta description is important for SEO and click-through rates.'
+      }
+    };
+  }
+
+  if (descLength < 120) {
+    score -= 20;
+    impact = 'negative';
+    context = 'Meta description is too short. Aim for 120-160 characters.';
+  } else if (descLength > 160) {
+    score -= 10;
+    impact = 'negative';
+    context = 'Meta description may be truncated in search results.';
+  } else {
+    impact = 'positive';
+    context = 'Meta description length is optimal.';
+  }
+
+  return {
+    score,
+    category: 'Meta Description',
+    details: {
+      value: descLength,
+      impact,
+      context
+    }
+  };
+}
+
+function analyzeHeadings($: cheerio.CheerioAPI): DetailedSEOScore {
+  const h1Count = $('h1').length;
+  const h2Count = $('h2').length;
+  const h3Count = $('h3').length;
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  let context = '';
+
+  if (h1Count === 0) {
+    score -= 30;
+    impact = 'negative';
+    context = 'Missing H1 heading.';
+  } else if (h1Count > 1) {
+    score -= 15;
+    impact = 'negative';
+    context = 'Multiple H1 headings found. Consider using only one.';
+  } else {
+    impact = 'positive';
+    context = 'Proper H1 usage.';
+  }
+
+  if (h2Count === 0) {
+    score -= 10;
+    context += ' No H2 headings found.';
+  }
+
+  return {
+    score,
+    category: 'Heading Structure',
+    details: {
+      value: `H1: ${h1Count}, H2: ${h2Count}, H3: ${h3Count}`,
+      impact,
+      context
+    }
+  };
+}
+
+function analyzeImages($: cheerio.CheerioAPI): DetailedSEOScore {
+  const images = $('img');
+  const totalImages = images.length;
+  const imagesWithAlt = $('img[alt]').length;
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  let context = '';
+
+  if (totalImages === 0) {
+    return {
+      score: 100,
+      category: 'Image Optimization',
+      details: {
+        value: 0,
+        impact: 'neutral',
+        context: 'No images found on the page.'
+      }
+    };
+  }
+
+  const altTextPercentage = (imagesWithAlt / totalImages) * 100;
+  if (altTextPercentage < 100) {
+    score -= Math.round((100 - altTextPercentage) / 2);
+    impact = 'negative';
+    context = `${totalImages - imagesWithAlt} out of ${totalImages} images missing alt text.`;
+  } else {
+    impact = 'positive';
+    context = 'All images have alt text.';
+  }
+
+  return {
+    score,
+    category: 'Image Optimization',
+    details: {
+      value: altTextPercentage,
+      impact,
+      context
+    }
+  };
+}
+
+function analyzeContent($: cheerio.CheerioAPI): DetailedSEOScore {
+  const wordCount = $('body').text().trim().split(/\s+/).length;
+  const paragraphs = $('p').length;
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  let context = '';
+
+  if (wordCount < 300) {
+    score -= 30;
+    impact = 'negative';
+    context = 'Content length is too short. Consider adding more detailed content.';
+  } else if (wordCount < 600) {
+    score -= 15;
+    impact = 'neutral';
+    context = 'Content length is moderate. Could benefit from more detailed information.';
+  } else {
+    impact = 'positive';
+    context = 'Good content length.';
+  }
+
+  return {
+    score,
+    category: 'Content Quality',
+    details: {
+      value: wordCount,
+      impact,
+      context
+    }
+  };
+}
+
+function analyzeTechnicalSEO($: cheerio.CheerioAPI): DetailedSEOScore {
+  let score = 100;
+  let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
+  const issues: string[] = [];
+
+  // Check canonical URL
+  const canonical = $('link[rel="canonical"]').attr('href');
+  if (!canonical) {
+    score -= 10;
+    issues.push('No canonical tag found');
+  }
+
+  // Check viewport meta tag
+  const viewport = $('meta[name="viewport"]').attr('content');
+  if (!viewport) {
+    score -= 10;
+    issues.push('No viewport meta tag found');
+  }
+
+  // Check robots meta tag
+  const robots = $('meta[name="robots"]').attr('content');
+  if (!robots) {
+    score -= 5;
+    issues.push('No robots meta tag found');
+  }
+
+  impact = score < 70 ? 'negative' : score < 90 ? 'neutral' : 'positive';
+
+  return {
+    score,
+    category: 'Technical SEO',
+    details: {
+      value: score,
+      impact,
+      context: issues.length > 0 ? `Issues found: ${issues.join(', ')}` : 'No major technical issues found'
+    }
+  };
+}
+
+async function enhancedAnalyzeSEO(url: string): Promise<EnhancedSEOReport> {
   try {
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       },
-      timeout: 10000
+      timeout: 60000,
+      maxRedirects: 5,
+      validateStatus: function (status) {
+        return status >= 200 && status < 300; // Only treat 2xx as success
+      }
     });
     
     const html = response.data;
     const $ = cheerio.load(html);
 
-    const title = $('title').text();
-    const metaDescription = $('meta[name="description"]').attr('content') || '';
-    const h1Count = $('h1').length;
-    const imgCount = $('img').length;
-    const imgWithAlt = $('img[alt]').length;
+    // Generate scores
+    const titleScore = analyzeTitleTag($);
+    const metaDescriptionScore = analyzeMetaDescription($);
+    const headingsScore = analyzeHeadings($);
+    const imageScore = analyzeImages($);
+    const contentScore = analyzeContent($);
+    const technicalScore = analyzeTechnicalSEO($);
 
-    const seoScore = calculateSEOScore(title, metaDescription, h1Count, imgCount, imgWithAlt);
-    const recommendations = generateRecommendations(title, metaDescription, h1Count, imgCount, imgWithAlt);
+    const scores = [titleScore, metaDescriptionScore, headingsScore, imageScore, contentScore, technicalScore];
+    const overallScore = calculateOverallScore(scores);
+
+    const detailedScores = {
+      titleScore,
+      metaDescriptionScore,
+      headingsScore,
+      imageOptimizationScore: imageScore,
+      contentScore,
+      technicalScore
+    };
 
     return {
       url,
-      overallScore: seoScore,
-      recommendations
+      overallScore,
+      detailedScores,
+      recommendations: generateEnhancedRecommendations(detailedScores)
     };
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      if (error.response) {
-        throw new Error(`Failed to fetch URL: ${error.response.status} ${error.response.statusText}`);
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error(`Unable to connect to ${url}. The website might be down or blocking requests.`);
+      } else if (error.code === 'ENOTFOUND') {
+        throw new Error(`Domain ${url} not found. Please check if the URL is correct.`);
+      } else if (error.response) {
+        throw new Error(`Server responded with error: ${error.response.status} ${error.response.statusText}`);
       } else if (error.request) {
-        throw new Error('No response received from the server');
-      } else {
-        throw new Error(`Error setting up the request: ${error.message}`);
+        throw new Error(`No response received from ${url}. The website might be down or taking too long to respond.`);
       }
     }
     throw new Error(`Error analyzing URL: ${(error as Error).message}`);
   }
 }
+function calculateOverallScore(scores: DetailedSEOScore[]): {
+  score: number;
+  interpretation: string;
+  penalties: string[];
+  bonuses: string[];
+} {
+  const totalScore = scores.reduce((acc, score) => acc + score.score, 0);
+  const overallScore = Math.round(totalScore / scores.length);
 
+  const penalties = scores
+    .filter(score => score.details.impact === 'negative')
+    .map(score => `${score.category}: ${score.details.context}`);
 
-function calculateSEOScore(title: string | any[], metaDescription: string | any[], h1Count: number, imgCount: number, imgWithAlt: number) {
-  let score = 100;
-  const penalties: string[] = [];
-  const bonuses: string[] = [];
+  const bonuses = scores
+    .filter(score => score.details.impact === 'positive')
+    .map(score => `${score.category}: ${score.details.context}`);
 
-  // Title analysis
-  if (!title) {
-    score -= 15;
-    penalties.push('Missing title tag');
-  } else {
-    const titleLength = title.length;
-    if (titleLength < 30) {
-      score -= 10;
-      penalties.push('Title too short (< 30 characters)');
-    } else if (titleLength > 60) {
-      score -= 5;
-      penalties.push('Title too long (> 60 characters)');
-    } else {
-      bonuses.push('Optimal title length');
-    }
-  }
+  let interpretation = '';
+  if (overallScore >= 90) interpretation = 'Excellent SEO optimization';
+  else if (overallScore >= 80) interpretation = 'Good SEO, with room for improvement';
+  else if (overallScore >= 70) interpretation = 'Average SEO, needs attention';
+  else interpretation = 'Poor SEO, requires significant improvements';
 
-  // Meta description analysis
-  if (!metaDescription) {
-    score -= 10;
-    penalties.push('Missing meta description');
-  } else {
-    const descLength = metaDescription.length;
-    if (descLength < 120) {
-      score -= 8;
-      penalties.push('Meta description too short (< 120 characters)');
-    } else if (descLength > 160) {
-      score -= 3;
-      penalties.push('Meta description too long (> 160 characters)');
-    } else {
-      bonuses.push('Optimal meta description length');
-    }
-  }
-
-  // H1 analysis
-  if (h1Count === 0) {
-    score -= 10;
-    penalties.push('Missing H1 tag');
-  } else if (h1Count > 1) {
-    score -= 5;
-    penalties.push('Multiple H1 tags');
-  } else {
-    bonuses.push('Proper H1 tag usage');
-  }
-
-  // Image analysis
-  if (imgCount > 0) {
-    const altTextPercentage = (imgWithAlt / imgCount) * 100;
-    if (altTextPercentage < 100) {
-      const penalty = Math.round((100 - altTextPercentage) / 10);
-      score -= penalty;
-      penalties.push(`${Math.round(100 - altTextPercentage)}% of images missing alt text`);
-    } else {
-      bonuses.push('All images have alt text');
-    }
-  }
-
-  return {
-    score: Math.max(0, Math.min(100, score)),
-    penalties,
-    bonuses
-  };
+  return { score: overallScore, interpretation, penalties, bonuses };
 }
-  interface Recommendation {
-    id: string;
-    category: string;
-    impact: string;
-    title: string;
-    description: string;
-    steps: string[];
-  }
-  function generateRecommendations(title: string | any[], metaDescription: string | any[], h1Count: number, imgCount: number, imgWithAlt: number) {
-    const recommendations: Recommendation[] = [];
-  
-    // Title recommendations
-    if (!title) {
-      recommendations.push({
-        id: 'title-missing',
-        category: 'Meta Tags',
-        impact: 'High',
-        title: 'Add Title Tag',
-        description: 'Your page is missing a title tag, which is crucial for SEO and user experience.',
-        steps: [
-          'Add a <title> tag in the <head> section of your HTML',
-          'Keep the title between 30-60 characters',
-          'Include your main keyword in the title',
-          'Make the title unique and descriptive'
-        ]
-      });
-    } else if (title.length < 30 || title.length > 60) {
-      recommendations.push({
-        id: 'title-length',
-        category: 'Meta Tags',
-        impact: 'Medium',
-        title: 'Optimize Title Length',
-        description: `Your title is ${title.length < 30 ? 'too short' : 'too long'} (${title.length} characters).`,
-        steps: [
-          'Adjust title length to between 30-60 characters',
-          'Ensure the title is descriptive and includes your main keyword',
-          'Make it compelling for users to click'
-        ]
-      });
-    }
-  
-    // Meta description recommendations
-    if (!metaDescription) {
-      recommendations.push({
-        id: 'meta-desc-missing',
-        category: 'Meta Tags',
-        impact: 'High',
-        title: 'Add Meta Description',
-        description: 'Your page is missing a meta description, which helps search engines understand your content.',
-        steps: [
-          'Add a meta description tag in the <head> section',
-          'Write a compelling description between 120-160 characters',
-          'Include your main keyword naturally',
-          'Make it actionable and relevant to the page content'
-        ]
-      });
-    } else if (metaDescription.length < 120 || metaDescription.length > 160) {
-      recommendations.push({
-        id: 'meta-desc-length',
-        category: 'Meta Tags',
-        impact: 'Medium',
-        title: 'Optimize Meta Description Length',
-        description: `Your meta description is ${metaDescription.length < 120 ? 'too short' : 'too long'} (${metaDescription.length} characters).`,
-        steps: [
-          'Adjust meta description length to between 120-160 characters',
-          'Ensure it accurately summarizes the page content',
-          'Include a call-to-action when appropriate'
-        ]
-      });
-    }
-  
-    // H1 recommendations
-    if (h1Count === 0) {
-      recommendations.push({
-        id: 'h1-missing',
-        category: 'Content Structure',
-        impact: 'High',
-        title: 'Add H1 Heading',
-        description: 'Your page is missing an H1 heading, which is important for both SEO and content hierarchy.',
-        steps: [
-          'Add a single H1 heading to your page',
-          'Make sure it contains your main keyword',
-          'Keep it consistent with your title tag',
-          'Use only one H1 per page'
-        ]
-      });
-    } else if (h1Count > 1) {
-      recommendations.push({
-        id: 'multiple-h1',
-        category: 'Content Structure',
-        impact: 'Medium',
-        title: 'Consolidate H1 Headings',
-        description: `Your page has ${h1Count} H1 headings. It's recommended to have only one.`,
-        steps: [
-          'Choose the most important H1 and keep only that one',
-          'Change other H1s to H2s or other lower-level headings',
-          'Ensure your heading hierarchy makes sense'
-        ]
-      });
-    }
-  
-    // Image recommendations
-    if (imgCount > 0) {
-      const missingAltCount = imgCount - imgWithAlt;
-      if (missingAltCount > 0) {
-        recommendations.push({
-          id: 'img-alt-missing',
-          category: 'Accessibility',
-          impact: 'Medium',
-          title: 'Add Alt Text to Images',
-          description: `${missingAltCount} out of ${imgCount} images are missing alt text.`,
-          steps: [
-            'Add descriptive alt text to all images',
-            'Keep alt text concise but descriptive',
-            'Use empty alt="" for decorative images',
-            'Include keywords naturally if relevant'
-          ]
-        });
-      }
-    }
-  
-    return recommendations;
+
+function generateEnhancedRecommendations(scores: {
+  [key: string]: DetailedSEOScore;
+}): Recommendation[] {
+  const recommendations: Recommendation[] = [];
+
+  // Implementation for each score type...
+  // Example for title:
+  if (scores.titleScore.score < 90) {
+    recommendations.push({
+      id: 'title-optimization',
+      category: 'Meta Tags',
+      impact: scores.titleScore.score < 70 ? 'High' : 'Medium',
+      title: 'Optimize Title Tag',
+      description: scores.titleScore.details.context || 'Title needs improvement',
+      steps: [
+        'Keep title length between 30-60 characters',
+        'Include primary keyword near the beginning',
+        'Make it compelling and relevant to the page content',
+        'Ensure each page has a unique title'
+      ],
+      additionalContext: 'Title tags are crucial for SEO and click-through rates.'
+    });
   }
 
-  export default async function handler(
-    req: VercelRequest,
-    res: VercelResponse
-  ) {
-    console.log('Received request:', req.method, req.body);
-  
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-  
-    try {
-      const { url } = req.body;
-      
-      if (!url) {
-        console.log('No URL provided');
-        return res.status(400).json({ error: 'URL is required' });
-      }
-  
-      console.log('Processing URL:', url);
-      const normalizedUrl = normalizeUrl(url);
-      console.log('Normalized URL:', normalizedUrl);
-      
-      const seoReport = await analyzeSEO(normalizedUrl);
-      console.log('Analysis complete:', seoReport);
-      
-      return res.status(200).json(seoReport);
-    } catch (error) {
-      console.error('Error in handler:', error);
-      
-      res.setHeader('Content-Type', 'application/json');
-      
-      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      return res.status(500).json({ 
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
+// Meta Description recommendations
+if (scores.metaDescriptionScore.score < 90) {
+  recommendations.push({
+    id: 'meta-description-optimization',
+    category: 'Meta Tags',
+    impact: scores.metaDescriptionScore.score < 70 ? 'High' : 'Medium',
+    title: 'Improve Meta Description',
+    description: scores.metaDescriptionScore.details.context || 'Meta description needs optimization',
+    steps: [
+      'Write a compelling description between 120-160 characters',
+      'Include relevant keywords naturally',
+      'Make it actionable and aligned with the page content',
+      'Ensure each page has a unique meta description'
+    ],
+    additionalContext: 'Meta descriptions impact click-through rates from search results.'
+  });
+}
+
+// Headings recommendations
+if (scores.headingsScore.score < 90) {
+  recommendations.push({
+    id: 'heading-structure-optimization',
+    category: 'Content Structure',
+    impact: scores.headingsScore.score < 70 ? 'High' : 'Medium',
+    title: 'Optimize Heading Structure',
+    description: scores.headingsScore.details.context || 'Heading structure needs improvement',
+    steps: [
+      'Use only one H1 heading per page',
+      'Structure content with proper H2 and H3 subheadings',
+      'Include relevant keywords in headings naturally',
+      'Ensure headings create a logical content hierarchy'
+    ],
+    additionalContext: 'Proper heading structure improves both SEO and user experience.'
+  });
+}
+
+// Image optimization recommendations
+if (scores.imageOptimizationScore.score < 90) {
+  recommendations.push({
+    id: 'image-optimization',
+    category: 'Media Optimization',
+    impact: scores.imageOptimizationScore.score < 70 ? 'High' : 'Medium',
+    title: 'Optimize Images',
+    description: scores.imageOptimizationScore.details.context || 'Image optimization needed',
+    steps: [
+      'Add descriptive alt text to all images',
+      'Compress images to reduce file size',
+      'Use descriptive file names for images',
+      'Implement lazy loading for images below the fold'
+    ],
+    additionalContext: 'Optimized images improve page load speed and accessibility.'
+  });
+}
+
+// Content quality recommendations
+if (scores.contentScore.score < 90) {
+  recommendations.push({
+    id: 'content-optimization',
+    category: 'Content Quality',
+    impact: scores.contentScore.score < 70 ? 'High' : 'Medium',
+    title: 'Enhance Content Quality',
+    description: scores.contentScore.details.context || 'Content needs improvement',
+    steps: [
+      'Aim for at least 600 words of quality content',
+      'Structure content with short paragraphs and bullet points',
+      'Include relevant keywords naturally throughout the content',
+      'Add internal and external links to provide additional value'
+    ],
+    additionalContext: 'High-quality, comprehensive content is essential for SEO success.'
+  });
+}
+
+// Technical SEO recommendations
+if (scores.technicalScore.score < 90) {
+  recommendations.push({
+    id: 'technical-seo-optimization',
+    category: 'Technical SEO',
+    impact: scores.technicalScore.score < 70 ? 'High' : 'Medium',
+    title: 'Improve Technical SEO',
+    description: scores.technicalScore.details.context || 'Technical improvements needed',
+    steps: [
+      'Add a canonical tag to prevent duplicate content issues',
+      'Implement a responsive design with proper viewport meta tag',
+      'Add a robots meta tag to guide search engines',
+      'Ensure proper XML sitemap implementation'
+    ],
+    additionalContext: 'Technical SEO provides the foundation for overall SEO success.'
+  });
+}
+
+  return recommendations;
+}
+
+export default async function handler(
+  req: VercelRequest,
+  res: VercelResponse
+) {
+  console.log('Received request:', req.method, req.body);
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      details: 'This endpoint only accepts POST requests'
+    });
+  }
+
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      console.log('No URL provided');
+      return res.status(400).json({ 
+        error: 'URL is required',
+        details: 'Please provide a valid URL in the request body'
       });
     }
+
+    console.log('Processing URL:', url);
+    const normalizedUrl = normalizeUrl(url);
+    console.log('Normalized URL:', normalizedUrl);
+    
+    const seoReport = await enhancedAnalyzeSEO(normalizedUrl);
+    console.log('Analysis complete');
+    
+    return res.status(200).json(seoReport);
+  } catch (error) {
+    console.error('Error in handler:', error);
+    
+    let statusCode = 500;
+    let errorMessage = 'An unknown error occurred';
+    let errorDetails = '';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorDetails = error.stack || '';
+      
+      // Determine appropriate status code based on error type
+      if (errorMessage.includes('Domain not found')) {
+        statusCode = 400;
+      } else if (errorMessage.includes('Unable to connect') || 
+                 errorMessage.includes('No response received')) {
+        statusCode = 503;
+      }
+    }
+    
+    return res.status(statusCode).json({ 
+      error: errorMessage,
+      details: errorDetails,
+      suggestions: [
+        'Check if the URL is correct and accessible',
+        'Try analyzing the website later',
+        'Make sure the website is not blocking automated requests',
+        'If the issue persists, try analyzing a different URL'
+      ]
+    });
   }
-  
-  // If you need to export these functions for testing or other purposes:
-  export { calculateSEOScore, generateRecommendations };
+}
+
+export { enhancedAnalyzeSEO, type EnhancedSEOReport };
