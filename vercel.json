@@ -11,7 +11,7 @@
       }
     ],
     "functions": {
-        "api/seoanalyze.ts": {
+        "api/seo/seoanalyze.ts": {
           "maxDuration": 60
         }
       }
