@@ -223,7 +223,7 @@ function analyzeImages($: cheerio.CheerioAPI): DetailedSEOScore {
 
 function analyzeContent($: cheerio.CheerioAPI): DetailedSEOScore {
   const wordCount = $('body').text().trim().split(/\s+/).length;
-  const paragraphs = $('p').length;
+  // const paragraphs = $('p').length;
   let score = 100;
   let impact: 'positive' | 'negative' | 'neutral' = 'neutral';
   let context = '';
