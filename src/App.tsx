@@ -17,7 +17,7 @@ export default function App() {
     setSEOReport(null);
     
     try {
-      const response = await fetch("/api/seoanalyze", {
+      const response = await fetch("/api/seo/seoanalyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
