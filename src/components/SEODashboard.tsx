@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import * as React from 'react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, CheckCircle, ChevronRight, ExternalLink, ArrowUpRight } from 'lucide-react';
 import { SEOReport, Recommendation } from '../types';
@@ -7,7 +7,7 @@ interface SEODashboardProps {
   report: SEOReport;
 }
 
-const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
+const SEODashboard: React.FC<SEODashboardProps> = ({ report }: { report: SEOReport }) => {
   return (
     <motion.div 
       className="w-full max-w-4xl mx-auto space-y-8"
@@ -94,10 +94,10 @@ const AnimatedCard: React.FC<{
   items: string[];
   colorClass: string;
 }> = ({ title, icon, items, colorClass }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const shadowRef = useRef<HTMLDivElement>(null);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const shadowRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const updateShadow = () => {
       if (cardRef.current && shadowRef.current) {
         const rect = cardRef.current.getBoundingClientRect();
@@ -154,10 +154,10 @@ const RecommendationCard: React.FC<{
   recommendation: Recommendation;
   index: number;
 }> = ({ recommendation, index }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const shadowRef = useRef<HTMLDivElement>(null);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const shadowRef = React.useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const updateShadow = () => {
       if (cardRef.current && shadowRef.current) {
         const rect = cardRef.current.getBoundingClientRect();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import * as React from 'react';
 import { motion } from 'framer-motion';
 import { Search, Globe, Loader2 } from 'lucide-react';
 
@@ -7,9 +7,9 @@ interface URLInputProps {
   isLoading: boolean;
 }
 
-const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
-  const [url, setUrl] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
+const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }: URLInputProps) => {
+  const [url, setUrl] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
