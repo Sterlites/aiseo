@@ -389,7 +389,7 @@ const RecommendationCard: React.FC<{
   index: number;
   isExpanded: boolean;
   onToggle: () => void;
-}> = ({ recommendation, index, isExpanded, onToggle }) => {
+}> = ({ recommendation, isExpanded, onToggle }) => {
   return (
     <div className="relative group">
       <motion.div
