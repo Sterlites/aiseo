@@ -4,10 +4,10 @@ import { Sparkles, Globe, ArrowRight, Loader2 } from "lucide-react";
 import SEODashboard from './components/SEODashboard';
 import { ThemeProvider } from './ThemeProvider';
 import ThemeToggle from './ThemeToggle';
-import { SEOReport } from "./types";
+import { EnhancedSEOReport } from "./types";
 
 export default function App() {
-  const [seoReport, setSEOReport] = useState<SEOReport | null>(null);
+  const [seoReport, setSEOReport] = useState<EnhancedSEOReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

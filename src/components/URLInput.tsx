@@ -14,7 +14,6 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }: URLInputPro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (url && isValidUrl(url)) {
-      // Ensure the URL has a protocol before passing it to onAnalyze
       const urlWithProtocol = url.startsWith('http://') || url.startsWith('https://') 
         ? url 
         : `https://${url}`;
@@ -28,7 +27,6 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }: URLInputPro
   };
 
   const isValidUrl = (url: string) => {
-    // This regex allows URLs with or without protocol, www, subdomains, and paths
     const pattern = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+(\.[a-zA-Z]{2,})?([\/\w \.-]*)*\/?$/;
     return pattern.test(url);
   };
@@ -49,7 +47,7 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }: URLInputPro
             }}
             className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-300"
           />
-          <div className="relative rounded-2xl p-2 bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
+          <div className="relative rounded-2xl p-2 bg-white dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200">
             <div className="flex items-center">
               <motion.div
                 animate={{ rotate: isLoading ? 360 : 0 }}
@@ -109,7 +107,6 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }: URLInputPro
           </div>
         </div>
 
-        {/* Optional validation message with theme support */}
         {url && !isValidUrl(url) && (
           <motion.p
             initial={{ opacity: 0, y: -10 }}
