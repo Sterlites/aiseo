@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
-import { Search, Globe, Loader2 } from 'lucide-react';
+import { Search, Globe } from 'lucide-react';
 import { useTheme } from '../ThemeProvider';
 
 interface URLInputProps {
