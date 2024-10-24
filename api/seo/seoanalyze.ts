@@ -584,7 +584,7 @@ async function enhancedAnalyzeSEO(url: string): Promise<EnhancedSEOReport> {
           errorMessage = `No response received from ${url}. The website might be blocking automated requests.`;
         }
       } else if (fetchMethod === 'puppeteer') {
-        errorMessage = `Failed to analyze ${url} using browser simulation. The website might be down or URL may be incorrect.`;
+        errorMessage = `${url} using advanced simulation. Please check if the website is currently accessible or verify that the URL is correct.`;
       }
     }
     throw new Error(errorMessage);

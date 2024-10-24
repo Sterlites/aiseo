@@ -179,8 +179,7 @@ const AnimatedCard: React.FC<{
       />
       <div
         ref={cardRef}
-        className="relative rounded-2xl p-6 bg-white/5 dark:bg-gray-900 backdrop-blur-sm transition-colors duration-200"
-      >
+        className="relative rounded-2xl p-6 bg-white shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 backdrop-blur-sm transition-colors duration-200"      >
         <h3 className="flex items-center text-lg font-semibold mb-4 text-gray-900 dark:text-white">
           {icon}
           <span className="ml-2">{title}</span>
