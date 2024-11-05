@@ -7,6 +7,72 @@ import { ThemeProvider } from './ThemeProvider';
 import ThemeToggle from './ThemeToggle';
 import { EnhancedSEOReport } from "./types";
 
+interface TooltipProps {
+  text: string;
+  children: React.ReactNode;
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ text, children }: TooltipProps) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  return (
+    <div 
+      className="relative inline-block"
+      onMouseEnter={() => setIsVisible(true)}
+      onMouseLeave={() => setIsVisible(false)}
+    >
+      {children}
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute z-10 p-2 text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-md shadow-lg w-64 bottom-full left transform -translate-x-1/2 mb-2"
+          >
+            <motion.div
+              animate={{
+                background: [
+                  "linear-gradient(0deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(60deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(120deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(180deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(240deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(300deg, #3b82f6, #8b5cf6)",
+                  "linear-gradient(360deg, #3b82f6, #8b5cf6)",
+                ],
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              className="absolute inset-0 opacity-10 rounded-md"
+            />
+            <p className="relative z-10">{text}</p>
+            <div className="absolute w-3 h-3 bg-white dark:bg-gray-800 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-1.5"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+interface FeatureBadgeProps {
+  icon: any;
+  text: string;
+  tooltip: string;
+}
+
+const FeatureBadge = ({ icon: Icon, text, tooltip }: FeatureBadgeProps) => (
+  <Tooltip text={tooltip}>
+  <motion.div 
+    className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md cursor-pointer"
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.95 }}
+  >
+    <Icon className="w-5 h-5" />
+    <span>{text}</span>
+  </motion.div>
+</Tooltip>
+);
 
 export default function App() {
   const [seoReport, setSEOReport] = useState<EnhancedSEOReport | null>(null);
@@ -18,14 +84,14 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     setSEOReport(null);
-    
+
     try {
       const response = await fetch("/api/seo/seoanalyze", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-cache",
-          "Pragma": "no-cache"
+          Pragma: "no-cache",
         },
         body: JSON.stringify({ url }),
       });
@@ -33,24 +99,29 @@ export default function App() {
       // Handle response
       const contentType = response.headers.get("content-type");
       let data;
-      
+
       if (contentType?.includes("application/json")) {
         data = await response.json();
       } else {
         const textResponse = await response.text();
-        throw new Error(textResponse || `Server returned ${response.status} ${response.statusText}`);
+        throw new Error(
+          textResponse ||
+            `Server returned ${response.status} ${response.statusText}`
+        );
       }
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
-      
+
       setSEOReport(data);
     } catch (err) {
-      console.error('Error analyzing URL:', err);
-      setError(err instanceof Error 
-        ? `Unable to analyze URL: ${err.message}` 
-        : 'An unexpected error occurred while analyzing the URL');
+      console.error("Error analyzing URL:", err);
+      setError(
+        err instanceof Error
+          ? `Unable to analyze URL: ${err.message}`
+          : "An unexpected error occurred while analyzing the URL"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +142,12 @@ export default function App() {
             {/* Animated Logo */}
             <div className="relative inline-block">
               <motion.div
-                animate={{ 
+                animate={{
                   boxShadow: [
                     "0 0 0 0 rgba(88, 80, 236, 0)",
                     "0 0 0 20px rgba(88, 80, 236, 0.2)",
-                    "0 0 0 40px rgba(88, 80, 236, 0)"
-                  ]
+                    "0 0 0 40px rgba(88, 80, 236, 0)",
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity }}
                 className="absolute inset-0 rounded-full"
@@ -86,52 +157,47 @@ export default function App() {
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                 className="w-24 h-24 mx-auto mb-6"
               >
-                <div 
-                  className="w-full h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500" 
-                  style={{ clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)" }} 
+                <div
+                  className="w-full h-full rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"
+                  style={{
+                    clipPath:
+                      "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                  }}
                 />
               </motion.div>
             </div>
-            
+
             {/* Title */}
             <h1 className="text-7xl font-bold tracking-tighter">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
                 AI-Powered SEO
               </span>
-              <br />for the New Era
+              <br />
+              for the New Era
             </h1>
-            
-            {/* Subtitle */}
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              The SEO landscape has evolved. Harness the power of generative AI and Retrieval-Augmented Generation (RAG) to make your website truly AI-SEO ready and dominate the modern search engine landscape.
+
+             {/* Subtitle */}
+             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+             The SEO landscape has been transformed by advancements in generative AI and Retrieval-Augmented Generation (RAG). Leverage this cutting-edge technology to make your website AI-SEO ready and outshine your competition in the modern search engine landscape.
             </p>
             
             {/* Feature Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-4 text-gray-500 dark:text-gray-400">
-              <motion.div 
-                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Brain className="w-5 h-5" />
-                <span>AI-Driven Analysis</span>
-              </motion.div>
-              <motion.div 
-                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Zap className="w-5 h-5" />
-                <span>RAG-Optimized Content</span>
-              </motion.div>
-              <motion.div 
-                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>Future-Proof SEO Strategy</span>
-              </motion.div>
+            <div className="flex flex-wrap items-center justify-center gap-8 text-gray-500 dark:text-gray-400">
+              <FeatureBadge 
+                icon={Brain} 
+                text="AI-Driven Analysis" 
+                tooltip="Our advanced AI algorithms analyze your website's content, structure, and performance to provide insights that traditional SEO tools miss."
+              />
+              <FeatureBadge 
+                icon={Zap} 
+                text="RAG-Optimized Content" 
+                tooltip="Leverage Retrieval-Augmented Generation (RAG) to create content that's not just keyword-optimized, but contextually rich and highly relevant to both users and AI-powered search engines."
+              />
+              <FeatureBadge 
+                icon={Sparkles} 
+                text="Future-Proof SEO Strategy" 
+                tooltip="Stay ahead of the curve with SEO strategies designed to excel in the age of AI-driven search, ensuring your website remains competitive as search algorithms evolve."
+              />
             </div>
           </motion.section>
 
@@ -140,6 +206,7 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
+            className="mb-16"
           >
             <URLInput onAnalyze={handleAnalyze} isLoading={isLoading} />
           </motion.section>
