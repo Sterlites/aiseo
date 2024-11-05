@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Brain, Zap } from "lucide-react";
 import SEODashboard from './components/SEODashboard';
 import URLInput from './components/URLInput';
 import { ThemeProvider } from './ThemeProvider';
 import ThemeToggle from './ThemeToggle';
 import { EnhancedSEOReport } from "./types";
+
 
 export default function App() {
   const [seoReport, setSEOReport] = useState<EnhancedSEOReport | null>(null);
@@ -23,7 +24,6 @@ export default function App() {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          // Add request timeout and cache control headers
           "Cache-Control": "no-cache",
           "Pragma": "no-cache"
         },
@@ -96,26 +96,43 @@ export default function App() {
             {/* Title */}
             <h1 className="text-7xl font-bold tracking-tighter">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                AI-Powered
+                AI-Powered SEO
               </span>
-              <br />SEO Analysis
+              <br />for the New Era
             </h1>
             
             {/* Subtitle */}
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Harness the power of artificial intelligence to optimize your website's visibility and performance.
+              The SEO landscape has evolved. Harness the power of generative AI and Retrieval-Augmented Generation (RAG) to make your website truly AI-SEO ready and dominate the modern search engine landscape.
             </p>
             
-            {/* Feature Badge */}
-            <motion.div 
-              className="flex items-center justify-center text-gray-500 dark:text-gray-400 space-x-4"
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Powered by advanced machine learning</span>
-              <Sparkles className="w-5 h-5" />
-            </motion.div>
+            {/* Feature Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-gray-500 dark:text-gray-400">
+              <motion.div 
+                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Brain className="w-5 h-5" />
+                <span>AI-Driven Analysis</span>
+              </motion.div>
+              <motion.div 
+                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Zap className="w-5 h-5" />
+                <span>RAG-Optimized Content</span>
+              </motion.div>
+              <motion.div 
+                className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>Future-Proof SEO Strategy</span>
+              </motion.div>
+            </div>
           </motion.section>
 
           {/* URL Input Section */}
