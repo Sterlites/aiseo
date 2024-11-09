@@ -201,63 +201,132 @@ return (
                 aria-label="Website URL"
                 required
               />
-          <motion.button
-            variants={buttonLoadingVariants}
-            initial="initial"
-            animate={isLoading ? "loading" : "initial"}
-            whileHover={!isLoading ? { scale: 1.05 } : {}}
-            whileTap={!isLoading ? { scale: 0.95 } : {}}
-            className={`
-              flex items-center justify-center
-              min-w-[140px] h-12 px-6 mr-2
-              font-medium rounded-xl
-              transition-all duration-500
-              ${isLoading || !isValidUrl(url)
-                ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 text-white'
-              }
-              ${isTransitioning ? 'opacity-0' : ''}
-            `}
-            type="submit"
-            disabled={isLoading || !isValidUrl(url)}
-          >
-            {isLoading ? (
-              <div className="relative w-6 h-6">
-                <motion.div
-                  className="absolute inset-0"
-                  animate={{
-                    rotate: [0, 360],
-                    borderRadius: ["20%", "50%"],
-                    border: ["2px solid rgba(100,100,100,0.2)", "2px solid rgba(100,100,100,0.8)"],                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                />
-                <motion.div
-                  className="absolute inset-1"
-                  animate={{
-                    rotate: [360, 0],
-                    borderRadius: ["50%", "20%"],
-                    border: ["2px solid rgba(100,100,100,0.8)", "2px solid rgba(100,100,100,0.2)"],                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                />
-              </div>
-            ) : (
-              <motion.div
-                initial={false}
-                animate={{ x: isFocused ? 5 : 0 }}
-                className="flex items-center"
-              >
-                <Search className="w-5 h-5" />
-                <span className="ml-2">Analyze</span>
-              </motion.div>
-            )}
+<motion.button
+  variants={buttonLoadingVariants}
+  initial="initial"
+  animate={isLoading ? "loading" : "initial"}
+  whileHover={!isLoading ? { scale: 1.05 } : {}}
+  whileTap={!isLoading ? { scale: 0.95 } : {}}
+  className={`
+    flex items-center justify-center
+    min-w-[140px] h-12 px-6 mr-2
+    font-medium rounded-xl
+    transition-all duration-500
+    ${isLoading 
+      ? 'bg-gradient-to-r from-gray-900/5 via-gray-900/10 to-gray-900/5 dark:from-white/5 dark:via-white/10 dark:to-white/5 backdrop-blur-sm' 
+      : !isValidUrl(url)
+        ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+        : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90 text-white'
+    }
+    ${isTransitioning ? 'opacity-0' : ''}
+  `}
+  type="submit"
+  disabled={isLoading || !isValidUrl(url)}
+>
+{isLoading ? (
+  <div className="relative w-8 h-8">
+    {/* Outer spinning ring */}
+    <motion.div
+      className="absolute inset-0"
+      animate={{
+        rotate: 360,
+        borderRadius: ["20%", "50%"],
+        boxShadow: [
+          "0 0 0 2px rgba(59, 130, 246, 0.2)",
+          "0 0 0 2px rgba(139, 92, 246, 0.5)",
+          "0 0 0 2px rgba(59, 130, 246, 0.2)"
+        ]
+      }}
+      transition={{
+        rotate: {
+          duration: 3,
+          repeat: Infinity,
+          ease: "linear"
+        },
+        borderRadius: {
+          duration: 2,
+          repeat: Infinity,
+          repeatType: "reverse"
+        },
+        boxShadow: {
+          duration: 2,
+          repeat: Infinity,
+        }
+      }}
+    />
+    
+    {/* Middle pulsing layer */}
+    <motion.div
+      className="absolute inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+      animate={{
+        scale: [1, 1.1, 1],
+        opacity: [0.5, 0.8, 0.5]
+      }}
+      transition={{
+        duration: 2,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    />
+    
+    {/* Inner spinning dots */}
+    <div className="absolute inset-2">
+      {[...Array(4)].map((_, index) => (
+        <motion.div
+          key={index}
+          className="absolute w-1.5 h-1.5 bg-white rounded-full"
+          animate={{
+            rotate: 360,
+            scale: [1, 1.2, 1]
+          }}
+          transition={{
+            rotate: {
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+              delay: index * 0.2
+            },
+            scale: {
+              duration: 1,
+              repeat: Infinity,
+              repeatType: "reverse",
+              delay: index * 0.2
+            }
+          }}
+          style={{
+            top: "50%",
+            left: "50%",
+            transform: `rotate(${index * 90}deg) translateX(6px) translateY(-50%)`,
+            transformOrigin: "-6px 50%"
+          }}
+        />
+      ))}
+    </div>
+
+    {/* Center dot */}
+    <motion.div
+      className="absolute inset-3 bg-white rounded-full"
+      animate={{
+        scale: [1, 1.2, 1],
+        opacity: [0.8, 1, 0.8]
+      }}
+      transition={{
+        duration: 1.5,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    />
+  </div>
+) : (
+  <motion.div
+    initial={false}
+    animate={{ x: isFocused ? 5 : 0 }}
+    className="flex items-center"
+  >
+    <Search className="w-5 h-5" />
+    <span className="ml-2">Analyze</span>
+  </motion.div>
+)}
           </motion.button>
         </div>
           </div>

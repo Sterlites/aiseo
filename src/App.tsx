@@ -130,7 +130,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <div className="min-h-screen pt-20 bg-gradient-to-br from-white via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white transition-colors duration-500">
+      <div className="min-h-screen pt-20 bg-gradient-to-br from-white via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 text-gray-900 dark:text-white transition-colors duration-500 scroll-smooth">
         <ThemeToggle />
         <main className="max-w-7xl mx-auto px-4 py-12">
           {/* Hero Section */}

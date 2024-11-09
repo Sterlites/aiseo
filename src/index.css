@@ -50,3 +50,6 @@
     }
   }
 }
+html {
+  scroll-behavior: smooth;
+}
