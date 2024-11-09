@@ -228,8 +228,7 @@ return (
                   animate={{
                     rotate: [0, 360],
                     borderRadius: ["20%", "50%"],
-                    border: ["2px solid rgba(255,255,255,0.2)", "2px solid rgba(255,255,255,0.8)"],
-                  }}
+                    border: ["2px solid rgba(100,100,100,0.2)", "2px solid rgba(100,100,100,0.8)"],                  }}
                   transition={{
                     duration: 2,
                     repeat: Infinity,
@@ -241,8 +240,7 @@ return (
                   animate={{
                     rotate: [360, 0],
                     borderRadius: ["50%", "20%"],
-                    border: ["2px solid rgba(255,255,255,0.8)", "2px solid rgba(255,255,255,0.2)"],
-                  }}
+                    border: ["2px solid rgba(100,100,100,0.8)", "2px solid rgba(100,100,100,0.2)"],                  }}
                   transition={{
                     duration: 2,
                     repeat: Infinity,

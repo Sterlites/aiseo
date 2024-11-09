@@ -84,7 +84,7 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     setSEOReport(null);
-
+  
     try {
       const response = await fetch("/api/seo/seoanalyze", {
         method: "POST",
@@ -95,11 +95,11 @@ export default function App() {
         },
         body: JSON.stringify({ url }),
       });
-
+  
       // Handle response
       const contentType = response.headers.get("content-type");
       let data;
-
+  
       if (contentType?.includes("application/json")) {
         data = await response.json();
       } else {
@@ -109,12 +109,13 @@ export default function App() {
             `Server returned ${response.status} ${response.statusText}`
         );
       }
-
+  
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
-
+  
       setSEOReport(data);
+      
     } catch (err) {
       console.error("Error analyzing URL:", err);
       setError(
@@ -229,17 +230,27 @@ export default function App() {
 
           {/* SEO Dashboard */}
           <AnimatePresence mode="wait">
-            {seoReport && (
-              <motion.section
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -40 }}
-                transition={{ duration: 0.5 }}
-              >
-                <SEODashboard report={seoReport} />
-              </motion.section>
-            )}
-          </AnimatePresence>
+  {seoReport && (
+    <motion.section
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -40 }}
+      transition={{ duration: 0.5 }}
+      onAnimationComplete={() => {
+        // Find the dashboard element and scroll to it
+        const dashboard = document.querySelector('[data-dashboard]');
+        if (dashboard) {
+          dashboard.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      }}
+    >
+      <SEODashboard report={seoReport} />
+    </motion.section>
+  )}
+</AnimatePresence>
         </main>
       </div>
     </ThemeProvider>

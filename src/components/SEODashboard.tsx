@@ -18,6 +18,17 @@ interface SEODashboardProps {
 }
 
 const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
+  const dashboardRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    // Smooth scroll to dashboard when it mounts
+    if (dashboardRef.current) {
+      dashboardRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, []);
   const [expandedScores, setExpandedScores] = React.useState<Set<string>>(
     new Set()
   );
@@ -45,7 +56,8 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
 
   return (
     <motion.div
-      className="w-full max-w-4xl mx-auto space-y-8 p-4 sm:p-6 md:p-8"
+      ref={dashboardRef}
+      className="w-full max-w-4xl mx-auto space-y-8 p-4 sm:p-6 md:p-8 scroll-mt-32" // Added scroll-mt-32 for padding when scrolling
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -161,8 +173,8 @@ const AnimatedCard: React.FC<{
     };
 
     updateShadow();
-    window.addEventListener('resize', updateShadow);
-    return () => window.removeEventListener('resize', updateShadow);
+    window.addEventListener("resize", updateShadow);
+    return () => window.removeEventListener("resize", updateShadow);
   }, []);
 
   return (
@@ -179,7 +191,8 @@ const AnimatedCard: React.FC<{
       />
       <div
         ref={cardRef}
-        className="relative rounded-2xl p-6 bg-white shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 backdrop-blur-sm transition-colors duration-200"      >
+        className="relative rounded-2xl p-6 bg-white shadow-sm border border-gray-100 dark:bg-gray-900 dark:border-gray-800 backdrop-blur-sm transition-colors duration-200"
+      >
         <h3 className="flex items-center text-lg font-semibold mb-4 text-gray-900 dark:text-white">
           {icon}
           <span className="ml-2">{title}</span>
