@@ -63,15 +63,15 @@ interface FeatureBadgeProps {
 
 const FeatureBadge = ({ icon: Icon, text, tooltip }: FeatureBadgeProps) => (
   <Tooltip text={tooltip}>
-  <motion.div 
-    className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md cursor-pointer"
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-  >
-    <Icon className="w-5 h-5" />
-    <span>{text}</span>
-  </motion.div>
-</Tooltip>
+    <motion.div 
+      className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-md cursor-pointer"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <Icon className="w-5 h-5" />
+      <span>{text}</span>
+    </motion.div>
+  </Tooltip>
 );
 
 export default function App() {
@@ -84,7 +84,7 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     setSEOReport(null);
-  
+
     try {
       const response = await fetch("/api/seo/seoanalyze", {
         method: "POST",
@@ -95,11 +95,11 @@ export default function App() {
         },
         body: JSON.stringify({ url }),
       });
-  
+
       // Handle response
       const contentType = response.headers.get("content-type");
       let data;
-  
+
       if (contentType?.includes("application/json")) {
         data = await response.json();
       } else {
@@ -109,19 +109,19 @@ export default function App() {
             `Server returned ${response.status} ${response.statusText}`
         );
       }
-  
+
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
-  
+
       setSEOReport(data);
       
     } catch (err) {
       console.error("Error analyzing URL:", err);
       setError(
         err instanceof Error
-          ? `Unable to analyze URL: ${err.message}`
-          : "An unexpected error occurred while analyzing the URL"
+          ? `We encountered a problem analyzing your URL: ${err.message}`
+          : "An unexpected error occurred during the analysis."
       );
     } finally {
       setIsLoading(false);
@@ -171,33 +171,33 @@ export default function App() {
             {/* Title */}
             <h1 className="text-7xl font-bold tracking-tighter">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
-                AI-Powered SEO
+                Elevating SEO
               </span>
               <br />
-              for the New Era
+              in the Age of AI
             </h1>
 
              {/* Subtitle */}
              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-             The SEO landscape has been transformed by advancements in generative AI and Retrieval-Augmented Generation (RAG). Leverage this cutting-edge technology to make your website AI-SEO ready and outshine your competition in the modern search engine landscape.
+             SEO has been redefined by breakthrough advancements in AI and contextual content generation. Optimize your website for a future where search engines prioritize intelligent, user-centric search results. Power up with AI-enhanced SEO that delivers real, measurable impact.
             </p>
             
             {/* Feature Badges */}
             <div className="flex flex-wrap items-center justify-center gap-8 text-gray-500 dark:text-gray-400">
               <FeatureBadge 
                 icon={Brain} 
-                text="AI-Driven Analysis" 
-                tooltip="Our advanced AI algorithms analyze your website's content, structure, and performance to provide insights that traditional SEO tools miss."
+                text="AI-Enhanced Insights" 
+                tooltip="Our AI-driven algorithms uncover SEO opportunities that traditional tools overlook, giving you a strategic advantage in optimizing your site's performance and relevance."
               />
               <FeatureBadge 
                 icon={Zap} 
-                text="RAG-Optimized Content" 
-                tooltip="Leverage Retrieval-Augmented Generation (RAG) to create content that's not just keyword-optimized, but contextually rich and highly relevant to both users and AI-powered search engines."
+                text="Content Elevated by AI" 
+                tooltip="Harness the power of Retrieval-Augmented Generation (RAG) to create content that's not only optimized for keywords but rich in context and relevance for both users and AI-powered search engines."
               />
               <FeatureBadge 
                 icon={Sparkles} 
-                text="Future-Proof SEO Strategy" 
-                tooltip="Stay ahead of the curve with SEO strategies designed to excel in the age of AI-driven search, ensuring your website remains competitive as search algorithms evolve."
+                text="Future-Ready SEO" 
+                tooltip="Place your website at the forefront of modern SEO with a strategy designed for the AI-driven search engines of tomorrow."
               />
             </div>
           </motion.section>
@@ -230,27 +230,27 @@ export default function App() {
 
           {/* SEO Dashboard */}
           <AnimatePresence mode="wait">
-  {seoReport && (
-    <motion.section
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -40 }}
-      transition={{ duration: 0.5 }}
-      onAnimationComplete={() => {
-        // Find the dashboard element and scroll to it
-        const dashboard = document.querySelector('[data-dashboard]');
-        if (dashboard) {
-          dashboard.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        }
-      }}
-    >
-      <SEODashboard report={seoReport} />
-    </motion.section>
-  )}
-</AnimatePresence>
+            {seoReport && (
+              <motion.section
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -40 }}
+                transition={{ duration: 0.5 }}
+                onAnimationComplete={() => {
+                  // Find the dashboard element and scroll to it
+                  const dashboard = document.querySelector('[data-dashboard]');
+                  if (dashboard) {
+                    dashboard.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                  }
+                }}
+              >
+                <SEODashboard report={seoReport} />
+              </motion.section>
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </ThemeProvider>
