@@ -21,7 +21,6 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
   const dashboardRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    // Smooth scroll to dashboard when it mounts
     if (dashboardRef.current) {
       dashboardRef.current.scrollIntoView({ 
         behavior: 'smooth',
@@ -29,6 +28,7 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
       });
     }
   }, []);
+
   const [expandedScores, setExpandedScores] = React.useState<Set<string>>(
     new Set()
   );
@@ -57,7 +57,7 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
   return (
     <motion.div
       ref={dashboardRef}
-      className="w-full max-w-4xl mx-auto space-y-8 p-4 sm:p-6 md:p-8 scroll-mt-32" // Added scroll-mt-32 for padding when scrolling
+      className="w-full max-w-4xl mx-auto space-y-8 p-4 sm:p-6 md:p-8 scroll-mt-32"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -283,9 +283,41 @@ const DetailedScoreCard: React.FC<{
   isExpanded: boolean;
   onToggle: () => void;
 }> = ({ title, score, isExpanded, onToggle }) => {
+  const cardRef = React.useRef<HTMLDivElement>(null);
+  const shadowRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const updateShadow = () => {
+      if (cardRef.current && shadowRef.current) {
+        const rect = cardRef.current.getBoundingClientRect();
+        shadowRef.current.style.width = `${rect.width + 8}px`;
+        shadowRef.current.style.height = `${rect.height + 8}px`;
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(updateShadow);
+    if (cardRef.current) {
+      resizeObserver.observe(cardRef.current);
+    }
+
+    updateShadow();
+
+    return () => {
+      if (cardRef.current) {
+        resizeObserver.unobserve(cardRef.current);
+      }
+      resizeObserver.disconnect();
+    };
+  }, [isExpanded]);
+
   return (
     <div className="relative group">
+      <div
+        ref={shadowRef}
+        className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10"
+      />
       <motion.div
+        ref={cardRef}
         className="relative rounded-2xl overflow-hidden bg-white dark:bg-gray-900 shadow-lg transition-all duration-200"
         layout
       >
@@ -298,9 +330,7 @@ const DetailedScoreCard: React.FC<{
               {title}
             </h4>
             <div className="flex items-center">
-              <span className="font-bold text-blue-500 mr-2">
-                {score.score}
-              </span>
+              <span className="font-bold text-blue-500 mr-2">{score.score}</span>
               {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </div>
           </div>
@@ -332,66 +362,6 @@ const DetailedScoreCard: React.FC<{
           </AnimatePresence>
         </div>
       </motion.div>
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10" />
-    </div>
-  );
-};
-
-const Recommendations: React.FC<{
-  report: EnhancedSEOReport;
-  expandedRecommendations: Set<string>;
-  setExpandedRecommendations: React.Dispatch<React.SetStateAction<Set<string>>>;
-  toggleAllRecommendations: () => void;
-}> = ({
-  report,
-  expandedRecommendations,
-  setExpandedRecommendations,
-  toggleAllRecommendations,
-}) => {
-  const toggleRecommendation = (id: string) => {
-    setExpandedRecommendations((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Detailed Recommendations
-        </h3>
-        <button
-          onClick={toggleAllRecommendations}
-          className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
-        >
-          {expandedRecommendations.size === report.recommendations.length ? (
-            <>
-              <Minimize size={20} />
-              <span>Collapse All</span>
-            </>
-          ) : (
-            <>
-              <Expand size={20} />
-              <span>Expand All</span>
-            </>
-          )}
-        </button>
-      </div>
-      {report.recommendations.map((rec: Recommendation, index) => (
-        <RecommendationCard
-          key={rec.id}
-          recommendation={rec}
-          index={index}
-          isExpanded={expandedRecommendations.has(rec.id)}
-          onToggle={() => toggleRecommendation(rec.id)}
-        />
-      ))}
     </div>
   );
 };
@@ -418,72 +388,131 @@ const RecommendationCard: React.FC<{
               px-3 py-1 rounded-full text-sm font-medium
               ${
                 recommendation.impact === "High"
-                  ? "bg-red-500/20 text-red-400"
-                  : recommendation.impact === "Medium"
-                  ? "bg-yellow-500/20 text-yellow-400"
-                  : "bg-blue-500/20 text-blue-400"
-              }
-            `}
-            >
-              {recommendation.impact} Impact
-            </span>
-          </div>
-          <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">
-            {recommendation.category}
-          </span>
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-            {recommendation.description}
-          </p>
-          <motion.div
-            className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 transition-colors duration-200 cursor-pointer"
-            onClick={onToggle}
+                ? "bg-red-500/20 text-red-400"
+                : recommendation.impact === "Medium"
+                ? "bg-yellow-500/20 text-yellow-400"
+                : "bg-blue-500/20 text-blue-400"
+            }
+          `}
           >
-            <div className="flex justify-between items-center">
-              <h5 className="font-semibold text-gray-900 dark:text-white">
-                Implementation Steps
-              </h5>
-              {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-            </div>
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.ul
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mt-2 space-y-2"
-                >
-                  {recommendation.steps.map((step, stepIndex) => (
-                    <motion.li
-                      key={stepIndex}
-                      className="flex items-start"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: stepIndex * 0.1 }}
-                    >
-                      <ChevronRight
-                        className="mr-2 mt-1 text-blue-400 flex-shrink-0"
-                        size={16}
-                      />
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {step}
-                      </span>
-                    </motion.li>
-                  ))}
-                </motion.ul>
-              )}
-            </AnimatePresence>
-          </motion.div>
-          {recommendation.additionalContext && (
-            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-              {recommendation.additionalContext}
-            </p>
-          )}
+            {recommendation.impact} Impact
+          </span>
         </div>
-      </motion.div>
-      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10" />
+        <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">
+          {recommendation.category}
+        </span>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+          {recommendation.description}
+        </p>
+        <motion.div
+          className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 transition-colors duration-200 cursor-pointer"
+          onClick={onToggle}
+        >
+          <div className="flex justify-between items-center">
+            <h5 className="font-semibold text-gray-900 dark:text-white">
+              Implementation Steps
+            </h5>
+            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.ul
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="mt-2 space-y-2"
+              >
+                {recommendation.steps.map((step, stepIndex) => (
+                  <motion.li
+                    key={stepIndex}
+                    className="flex items-start"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: stepIndex * 0.1 }}
+                  >
+                    <ChevronRight
+                      className="mr-2 mt-1 text-blue-400 flex-shrink-0"
+                      size={16}
+                    />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {step}
+                    </span>
+                  </motion.li>
+                ))}
+              </motion.ul>
+            )}
+          </AnimatePresence>
+        </motion.div>
+        {recommendation.additionalContext && (
+          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+            {recommendation.additionalContext}
+          </p>
+        )}
+      </div>
+    </motion.div>
+    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10" />
+  </div>
+);
+};
+
+const Recommendations: React.FC<{
+report: EnhancedSEOReport;
+expandedRecommendations: Set<string>;
+setExpandedRecommendations: React.Dispatch<React.SetStateAction<Set<string>>>;
+toggleAllRecommendations: () => void;
+}> = ({
+report,
+expandedRecommendations,
+setExpandedRecommendations,
+toggleAllRecommendations,
+}) => {
+const toggleRecommendation = (id: string) => {
+  setExpandedRecommendations((prev) => {
+    const newSet = new Set(prev);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    return newSet;
+  });
+};
+
+return (
+  <div className="space-y-6">
+    <div className="flex justify-between items-center">
+      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+        Detailed Recommendations
+      </h3>
+      <button
+        onClick={toggleAllRecommendations}
+        className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
+      >
+        {expandedRecommendations.size === report.recommendations.length ? (
+          <>
+            <Minimize size={20} />
+            <span>Collapse All</span>
+          </>
+        ) : (
+          <>
+            <Expand size={20} />
+            <span>Expand All</span>
+          </>
+        )}
+      </button>
     </div>
-  );
+    {report.recommendations.map((rec: Recommendation, index) => (
+      <RecommendationCard
+        key={rec.id}
+        recommendation={rec}
+        index={index}
+        isExpanded={expandedRecommendations.has(rec.id)}
+        onToggle={() => toggleRecommendation(rec.id)}
+      />
+    ))}
+  </div>
+);
 };
 
 export default SEODashboard;
