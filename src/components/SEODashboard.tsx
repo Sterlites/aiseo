@@ -1,3 +1,4 @@
+import Masonry from 'react-masonry-css';
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -239,6 +240,12 @@ const DetailedScores: React.FC<{
     });
   };
 
+  const breakpointColumnsObj = {
+    default: 2,
+    1100: 2,
+    700: 1
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -262,7 +269,11 @@ const DetailedScores: React.FC<{
           )}
         </button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Masonry
+        breakpointCols={breakpointColumnsObj}
+        className="my-masonry-grid"
+        columnClassName="my-masonry-grid_column"
+      >
         {Object.entries(report.detailedScores).map(([key, score]) => (
           <DetailedScoreCard
             key={key}
@@ -272,7 +283,7 @@ const DetailedScores: React.FC<{
             onToggle={() => toggleScore(key)}
           />
         ))}
-      </div>
+      </Masonry>
     </div>
   );
 };
