@@ -15,6 +15,7 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
   const [isFocused, setIsFocused] = React.useState(false);
   const [showCompletionEffect, setShowCompletionEffect] = React.useState(false);
   const completionTimer = React.useRef<NodeJS.Timeout>();
+  const [error, setError] = React.useState('');
 
   // Enhanced completion effect handling
   React.useEffect(() => {
@@ -51,7 +52,12 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (url.toLowerCase().includes("xqlzv.com")) {
+      setError("Nice try, but evaluating the OG is off-limits!");
+      return;
+    }
     if (url && !isLoading && isValidUrl(url)) {
+      setError('');
       const urlWithProtocol = url.startsWith('http://') || url.startsWith('https://')
         ? url
         : `https://${url}`;
@@ -61,6 +67,7 @@ const URLInput: React.FC<URLInputProps> = ({ onAnalyze, isLoading }) => {
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setUrl(e.target.value.trim());
+    setError('');
   };
   
   const loadingVariants = {
@@ -332,7 +339,7 @@ return (
           </div>
         </div>
 
-        {url && !isValidUrl(url) && (
+        {(error || (url && !isValidUrl(url))) && (
           <motion.p
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -340,7 +347,7 @@ return (
             className="mt-2 text-sm text-amber-600 dark:text-amber-400 transition-colors duration-500"
             role="alert"
           >
-            Please enter a valid URL (e.g., example.com or https://example.com)
+            {error || "Please enter a valid URL (e.g., example.com or https://example.com)"}
           </motion.p>
         )}
       </form>
