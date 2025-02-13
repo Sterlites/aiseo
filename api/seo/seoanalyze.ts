@@ -777,26 +777,134 @@ function calculateOverallScore(scores: DetailedSEOScore[]): {
   interpretation: string;
   penalties: string[];
   bonuses: string[];
+  weightedBreakdown: {
+    category: string;
+    weightedScore: number;
+    weight: number;
+  }[];
 } {
-  const totalScore = scores.reduce((acc, score) => acc + score.score, 0);
-  const overallScore = Math.round(totalScore / scores.length);
+  // Define weights for different SEO aspects
+  const weights = {
+    "Content Quality": 0.25,
+    "Technical SEO": 0.2,
+    "Meta Tags": 0.15,
+    "Mobile-Friendliness": 0.12,
+    "Page Speed": 0.1,
+    "Semantic HTML": 0.08,
+    "Image Optimization": 0.05,
+    "Linking Structure": 0.05,
+  };
 
+  // Calculate weighted scores
+  const weightedBreakdown = scores.map((score) => {
+    const weight = weights[score.category as keyof typeof weights] || 0.05;
+    const weightedScore = score.score * weight;
+    return {
+      category: score.category,
+      weightedScore,
+      weight,
+    };
+  });
+
+  // Calculate overall score with weights
+  const overallScore = Math.round(
+    weightedBreakdown.reduce((acc, item) => acc + item.weightedScore, 0)
+  );
+
+  // Advanced penalty and bonus system
   const penalties = scores
-    .filter((score) => score.details.impact === "negative")
-    .map((score) => `${score.category}: ${score.details.context}`);
+    .filter((score) => {
+      const weight = weights[score.category as keyof typeof weights] || 0.05;
+      return (
+        score.details.impact === "negative" &&
+        score.score * weight < 70 * weight
+      );
+    })
+    .map((score) => ({
+      issue: `${score.category}: ${score.details.context}`,
+      severity: score.score < 50 ? "Critical" : "Important",
+    }))
+    .sort((a, b) => (a.severity === "Critical" ? -1 : 1))
+    .map((p) => `[${p.severity}] ${p.issue}`);
 
   const bonuses = scores
-    .filter((score) => score.details.impact === "positive")
+    .filter((score) => {
+      const weight = weights[score.category as keyof typeof weights] || 0.05;
+      return (
+        score.details.impact === "positive" &&
+        score.score * weight > 90 * weight
+      );
+    })
     .map((score) => `${score.category}: ${score.details.context}`);
 
+  // Enhanced interpretation logic
   let interpretation = "";
-  if (overallScore >= 90) interpretation = "Excellent SEO optimization";
-  else if (overallScore >= 80)
-    interpretation = "Good SEO, with room for improvement";
-  else if (overallScore >= 70) interpretation = "Average SEO, needs attention";
-  else interpretation = "Poor SEO, requires significant improvements";
+  if (overallScore >= 90) {
+    interpretation =
+      "Exceptional SEO optimization. Your site is well-optimized across all key aspects.";
+  } else if (overallScore >= 80) {
+    interpretation =
+      "Strong SEO foundation with specific areas for improvement.";
+  } else if (overallScore >= 70) {
+    interpretation =
+      "Moderate SEO performance. Several important areas need attention.";
+  } else if (overallScore >= 60) {
+    interpretation =
+      "Below average SEO. Urgent improvements needed in critical areas.";
+  } else {
+    interpretation =
+      "Poor SEO performance. Comprehensive optimization strategy required.";
+  }
 
-  return { score: overallScore, interpretation, penalties, bonuses };
+  // Add competitive context
+  const competitiveContext = getCompetitiveContext(
+    overallScore,
+    weightedBreakdown
+  );
+  interpretation += ` ${competitiveContext}`;
+
+  return {
+    score: overallScore,
+    interpretation,
+    penalties,
+    bonuses,
+    weightedBreakdown,
+  };
+}
+
+function getCompetitiveContext(
+  overallScore: number,
+  breakdown: { category: string; weightedScore: number; weight: number }[]
+): string {
+  const topPerformingAreas = breakdown
+    .filter((item) => item.weightedScore / item.weight >= 90)
+    .map((item) => item.category);
+
+  const criticalAreas = breakdown
+    .filter((item) => item.weightedScore / item.weight <= 60)
+    .map((item) => item.category);
+
+  let context = "";
+
+  if (overallScore >= 90) {
+    context = `Your site outperforms 90% of websites in ${topPerformingAreas.join(
+      ", "
+    )}.`;
+  } else if (overallScore >= 80) {
+    context = `You're ahead of 75% of websites, with excellence in ${topPerformingAreas.join(
+      ", "
+    )}.`;
+  } else if (overallScore >= 70) {
+    context = `You're performing better than average, but ${criticalAreas.join(
+      ", "
+    )} need attention.`;
+  } else {
+    context = `Immediate attention required for ${criticalAreas.join(
+      ", "
+    )} to improve competitive position.`;
+  }
+
+  return context;
 }
 
 function generateEnhancedRecommendations(scores: {
