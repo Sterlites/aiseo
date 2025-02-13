@@ -1,4 +1,4 @@
-import Masonry from 'react-masonry-css';
+import Masonry from "react-masonry-css";
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -23,9 +23,9 @@ const SEODashboard: React.FC<SEODashboardProps> = ({ report }) => {
 
   React.useEffect(() => {
     if (dashboardRef.current) {
-      dashboardRef.current.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
+      dashboardRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
       });
     }
   }, []);
@@ -222,6 +222,59 @@ const AnimatedCard: React.FC<{
   );
 };
 
+const ExpandAllButton: React.FC<{
+  isExpanded: boolean;
+  onClick: () => void;
+}> = ({ isExpanded, onClick }) => {
+  return (
+    <motion.button
+      onClick={onClick}
+      className="group relative flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 30,
+      }}
+    >
+      <motion.div
+        animate={{
+          rotate: isExpanded ? 180 : 0,
+          scale: [1, 1.2, 1],
+        }}
+        transition={{ duration: 0.4 }}
+        className="flex items-center"
+      >
+        {isExpanded ? (
+          <Minimize className="w-5 h-5 mr-2" />
+        ) : (
+          <Expand className="w-5 h-5 mr-2" />
+        )}
+      </motion.div>
+      <span className="relative">
+        <span className="relative z-10">
+          {isExpanded ? "Collapse All" : "Expand All"}
+        </span>
+        <motion.span
+          className="absolute inset-0 bg-white"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 0 }}
+          whileHover={{ scaleX: 1 }}
+          transition={{ duration: 0.3 }}
+          style={{
+            originX: 0,
+            opacity: 0.2,
+            borderRadius: "2px",
+          }}
+        />
+      </span>
+    </motion.button>
+  );
+};
+
 const DetailedScores: React.FC<{
   report: EnhancedSEOReport;
   expandedScores: Set<string>;
@@ -243,7 +296,7 @@ const DetailedScores: React.FC<{
   const breakpointColumnsObj = {
     default: 2,
     1100: 2,
-    700: 1
+    700: 1,
   };
 
   return (
@@ -252,22 +305,12 @@ const DetailedScores: React.FC<{
         <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
           Detailed Scores
         </h3>
-        <button
+        <ExpandAllButton
+          isExpanded={
+            expandedScores.size === Object.keys(report.detailedScores).length
+          }
           onClick={toggleAllScores}
-          className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
-        >
-          {expandedScores.size === Object.keys(report.detailedScores).length ? (
-            <>
-              <Minimize size={20} />
-              <span>Collapse All</span>
-            </>
-          ) : (
-            <>
-              <Expand size={20} />
-              <span>Expand All</span>
-            </>
-          )}
-        </button>
+        />
       </div>
       <Masonry
         breakpointCols={breakpointColumnsObj}
@@ -341,7 +384,9 @@ const DetailedScoreCard: React.FC<{
               {title}
             </h4>
             <div className="flex items-center">
-              <span className="font-bold text-blue-500 mr-2">{score.score}</span>
+              <span className="font-bold text-blue-500 mr-2">
+                {score.score}
+              </span>
               {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </div>
           </div>
@@ -368,6 +413,12 @@ const DetailedScoreCard: React.FC<{
                     <strong>Context:</strong> {score.details.context}
                   </p>
                 )}
+                {title === "semanticStructureScore" && (
+                  <SemanticStructureVisual />
+                )}
+                {title === "pageSpeedScore" && (
+                  <PerformanceMetrics score={score} />
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -376,6 +427,18 @@ const DetailedScoreCard: React.FC<{
     </div>
   );
 };
+
+const SemanticStructureVisual: React.FC = () => (
+  <motion.div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+    {/* Add visual representation of semantic structure */}
+  </motion.div>
+);
+
+const PerformanceMetrics = ({}: { score: DetailedSEOScore }) => (
+  <motion.div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+    {/* Add performance visualization */}
+  </motion.div>
+);
 
 const RecommendationCard: React.FC<{
   recommendation: Recommendation;
@@ -399,131 +462,121 @@ const RecommendationCard: React.FC<{
               px-3 py-1 rounded-full text-sm font-medium
               ${
                 recommendation.impact === "High"
-                ? "bg-red-500/20 text-red-400"
-                : recommendation.impact === "Medium"
-                ? "bg-yellow-500/20 text-yellow-400"
-                : "bg-blue-500/20 text-blue-400"
-            }
+                  ? "bg-red-500/20 text-red-400"
+                  : recommendation.impact === "Medium"
+                  ? "bg-yellow-500/20 text-yellow-400"
+                  : "bg-blue-500/20 text-blue-400"
+              }
           `}
-          >
-            {recommendation.impact} Impact
-          </span>
-        </div>
-        <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">
-          {recommendation.category}
-        </span>
-        <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
-          {recommendation.description}
-        </p>
-        <motion.div
-          className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 transition-colors duration-200 cursor-pointer"
-          onClick={onToggle}
-        >
-          <div className="flex justify-between items-center">
-            <h5 className="font-semibold text-gray-900 dark:text-white">
-              Implementation Steps
-            </h5>
-            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            >
+              {recommendation.impact} Impact
+            </span>
           </div>
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.ul
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-2 space-y-2"
-              >
-                {recommendation.steps.map((step, stepIndex) => (
-                  <motion.li
-                    key={stepIndex}
-                    className="flex items-start"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: stepIndex * 0.1 }}
-                  >
-                    <ChevronRight
-                      className="mr-2 mt-1 text-blue-400 flex-shrink-0"
-                      size={16}
-                    />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {step}
-                    </span>
-                  </motion.li>
-                ))}
-              </motion.ul>
-            )}
-          </AnimatePresence>
-        </motion.div>
-        {recommendation.additionalContext && (
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-            {recommendation.additionalContext}
+          <span className="inline-block px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded-full text-sm text-gray-600 dark:text-gray-400 mb-4 transition-colors duration-200">
+            {recommendation.category}
+          </span>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+            {recommendation.description}
           </p>
-        )}
-      </div>
-    </motion.div>
-    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10" />
-  </div>
-);
+          <motion.div
+            className="bg-gray-100 dark:bg-gray-800/50 rounded-xl p-4 transition-colors duration-200 cursor-pointer"
+            onClick={onToggle}
+          >
+            <div className="flex justify-between items-center">
+              <h5 className="font-semibold text-gray-900 dark:text-white">
+                Implementation Steps
+              </h5>
+              {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </div>
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.ul
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-2 space-y-2"
+                >
+                  {recommendation.steps.map((step, stepIndex) => (
+                    <motion.li
+                      key={stepIndex}
+                      className="flex items-start"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: stepIndex * 0.1 }}
+                    >
+                      <ChevronRight
+                        className="mr-2 mt-1 text-blue-400 flex-shrink-0"
+                        size={16}
+                      />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {step}
+                      </span>
+                    </motion.li>
+                  ))}
+                </motion.ul>
+              )}
+            </AnimatePresence>
+          </motion.div>
+          {recommendation.additionalContext && (
+            <p className="mt-4 text-sm text-gray-600 dark:text-gray-400">
+              {recommendation.additionalContext}
+            </p>
+          )}
+        </div>
+      </motion.div>
+      <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-300 -z-10" />
+    </div>
+  );
 };
 
 const Recommendations: React.FC<{
-report: EnhancedSEOReport;
-expandedRecommendations: Set<string>;
-setExpandedRecommendations: React.Dispatch<React.SetStateAction<Set<string>>>;
-toggleAllRecommendations: () => void;
+  report: EnhancedSEOReport;
+  expandedRecommendations: Set<string>;
+  setExpandedRecommendations: React.Dispatch<React.SetStateAction<Set<string>>>;
+  toggleAllRecommendations: () => void;
 }> = ({
-report,
-expandedRecommendations,
-setExpandedRecommendations,
-toggleAllRecommendations,
+  report,
+  expandedRecommendations,
+  setExpandedRecommendations,
+  toggleAllRecommendations,
 }) => {
-const toggleRecommendation = (id: string) => {
-  setExpandedRecommendations((prev) => {
-    const newSet = new Set(prev);
-    if (newSet.has(id)) {
-      newSet.delete(id);
-    } else {
-      newSet.add(id);
-    }
-    return newSet;
-  });
-};
+  const toggleRecommendation = (id: string) => {
+    setExpandedRecommendations((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
-return (
-  <div className="space-y-6">
-    <div className="flex justify-between items-center">
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-        Detailed Recommendations
-      </h3>
-      <button
-        onClick={toggleAllRecommendations}
-        className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200"
-      >
-        {expandedRecommendations.size === report.recommendations.length ? (
-          <>
-            <Minimize size={20} />
-            <span>Collapse All</span>
-          </>
-        ) : (
-          <>
-            <Expand size={20} />
-            <span>Expand All</span>
-          </>
-        )}
-      </button>
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Detailed Recommendations
+        </h3>
+        <ExpandAllButton
+          isExpanded={
+            expandedRecommendations.size === report.recommendations.length
+          }
+          onClick={toggleAllRecommendations}
+        />
+      </div>
+      {report.recommendations.map((rec: Recommendation, index) => (
+        <RecommendationCard
+          key={rec.id}
+          recommendation={rec}
+          index={index}
+          isExpanded={expandedRecommendations.has(rec.id)}
+          onToggle={() => toggleRecommendation(rec.id)}
+        />
+      ))}
     </div>
-    {report.recommendations.map((rec: Recommendation, index) => (
-      <RecommendationCard
-        key={rec.id}
-        recommendation={rec}
-        index={index}
-        isExpanded={expandedRecommendations.has(rec.id)}
-        onToggle={() => toggleRecommendation(rec.id)}
-      />
-    ))}
-  </div>
-);
+  );
 };
 
 export default SEODashboard;
